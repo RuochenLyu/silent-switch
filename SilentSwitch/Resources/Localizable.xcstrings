@@ -1,0 +1,258 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "about.github" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "github.com/RuochenLyu/silent-switch" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "github.com/RuochenLyu/silent-switch" } }
+      }
+    },
+    "about.repository" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GitHub" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GitHub" } }
+      }
+    },
+    "about.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关于" } }
+      }
+    },
+    "about.version" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Version" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "版本" } }
+      }
+    },
+    "about.versionFormat" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ (%@)" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ (%@)" } }
+      }
+    },
+    "common.clear" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "清除" } }
+      }
+    },
+    "common.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
+      }
+    },
+    "common.error" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Error" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "错误" } }
+      }
+    },
+    "common.recheck" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recheck" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新检查" } }
+      }
+    },
+    "danger.quit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出" } }
+      }
+    },
+    "quit.confirm.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quitting stops all hotkeys. Closing the window keeps them active in the background." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出后将停止监听快捷键。只关闭窗口会继续在后台运行。" } }
+      }
+    },
+    "quit.confirm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "要退出吗？" } }
+      }
+    },
+    "runtime.status.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quitting stops hotkeys. Closing the window keeps them active." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出后会停止监听快捷键；关闭窗口不会退出。" } }
+      }
+    },
+    "runtime.status.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出" } }
+      }
+    },
+    "general.launchAtLogin.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start quietly after login without opening the settings window." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录后自动在后台启动，不显示设置窗口。" } }
+      }
+    },
+    "general.openLoginItems" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Login Items…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开登录项设置…" } }
+      }
+    },
+    "general.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通用" } }
+      }
+    },
+    "language.en" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "English" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "English" } }
+      }
+    },
+    "language.system" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "跟随系统" } }
+      }
+    },
+    "language.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "语言" } }
+      }
+    },
+    "language.zhHans" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chinese" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "中文" } }
+      }
+    },
+    "login.requiresApproval" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Approval required in System Settings → General → Login Items." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要在 系统设置 → 通用 → 登录项 中批准。" } }
+      }
+    },
+    "login.toggle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录时启动" } }
+      }
+    },
+    "permission.missing.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grant Accessibility access to catch matching hotkeys. Other keys pass through unchanged." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予辅助功能权限后，才能拦截匹配的快捷键；其他按键会原样放行。" } }
+      }
+    },
+    "permission.missing.short" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Accessibility access is required. Hotkeys are paused." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要辅助功能权限，快捷键暂未生效。" } }
+      }
+    },
+    "permission.request" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grant Access" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予权限" } }
+      }
+    },
+    "modifier.command" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "⌘ Command" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "⌘ Command" } }
+      }
+    },
+    "modifier.control" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "⌃ Control" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "⌃ Control" } }
+      }
+    },
+    "modifier.option" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "⌥ Option" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "⌥ Option" } }
+      }
+    },
+    "settings.configError" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The local configuration was reset because it could not be read." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地配置无法读取，已恢复默认配置。" } }
+      }
+    },
+    "shortcut.chooseApp" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose App…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择应用…" } }
+      }
+    },
+    "shortcut.clearTarget" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear selected app" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "清除已选应用" } }
+      }
+    },
+    "shortcut.duplicateWarning" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Duplicate shortcut. This one will be ignored." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键重复，这一项不会生效。" } }
+      }
+    },
+    "shortcut.digit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Digit" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "数字键" } }
+      }
+    },
+    "shortcut.enabled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabled" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "启用" } }
+      }
+    },
+    "shortcut.emptyTarget" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No app selected" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未选择应用" } }
+      }
+    },
+    "shortcut.invalidApp" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected app has no bundle identifier." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "所选应用缺少 Bundle ID。" } }
+      }
+    },
+    "shortcut.maxSlots" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Up to 9 shortcut slots are supported." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最多支持 9 个快捷键。" } }
+      }
+    },
+    "shortcut.modifier" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Modifier" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "修饰键" } }
+      }
+    },
+    "shortcut.remove" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove slot" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除快捷键" } }
+      }
+    },
+    "shortcut.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shortcuts" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键" } }
+      }
+    },
+    "shortcut.addSlot" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Shortcut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新增快捷键" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
