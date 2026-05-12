@@ -23,7 +23,7 @@ It has no Dock icon, no menu bar icon, no overlay, no notifications, and no anal
 
 ## Install And Use
 
-Download the DMG from [Releases](https://github.com/RuochenLyu/silent-switch/releases), then drag `Silent Switch.app` into `Applications`. The settings window appears on first launch.
+Download the DMG from [Releases](https://github.com/RuochenLyu/silent-switch/releases), then drag `Silent Switch.app` into `Applications`. Release packages are signed with an Apple Developer ID and notarized by Apple.
 
 1. Click `Grant Permission` and allow Accessibility access in System Settings.
 2. Choose a target app for each hotkey.
@@ -35,14 +35,6 @@ Config is stored at:
 ```text
 ~/Library/Application Support/com.aix4u.silentswitch/config.json
 ```
-
-### About Release Builds
-
-Official release packages are signed with an Apple Developer ID and notarized by Apple. On first launch, macOS should show the app as coming from an identified developer.
-
-Older downloads, or local packages created with `make package`, may still be unnotarized and macOS may warn that it cannot verify the developer. Only install a package if you trust the source code and the release source.
-
-Reference: [Open a Mac app from an unknown developer - Apple Support](https://support.apple.com/en-nz/guide/mac-help/-mh40616/mac)
 
 ## Hotkey Rules
 
@@ -105,24 +97,7 @@ Build scripts prefer an existing Apple Development identity, or a local identity
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
-Official releases require a `Developer ID Application` certificate in Keychain and saved Apple notary credentials:
-
-```sh
-xcrun notarytool store-credentials "silent-switch-notary" \
-  --apple-id "you@example.com" \
-  --team-id "TEAMID" \
-  --password "app-specific-password"
-
-SILENT_SWITCH_NOTARY_PROFILE=silent-switch-notary make package-notarized
-```
-
-The release script uses the first `Developer ID Application` identity by default. To select one explicitly:
-
-```sh
-SILENT_SWITCH_CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
-SILENT_SWITCH_DEVELOPMENT_TEAM=TEAMID \
-make package-notarized
-```
+Official releases use `make package-notarized`, which requires a `Developer ID Application` certificate and a `silent-switch-notary` notary profile in Keychain.
 
 ## Project Layout
 

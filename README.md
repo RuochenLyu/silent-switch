@@ -23,7 +23,7 @@ Option / Command / Control + 顶部数字键 1...9
 
 ## 安装与使用
 
-从 [Releases](https://github.com/RuochenLyu/silent-switch/releases) 下载安装包后，把 `Silent Switch.app` 拖到“应用程序”。首次打开会显示设置窗口。
+从 [Releases](https://github.com/RuochenLyu/silent-switch/releases) 下载安装包后，把 `Silent Switch.app` 拖到“应用程序”。发布包已使用 Apple Developer ID 签名，并经过 Apple 公证。
 
 1. 点击 `授予权限`，在系统设置里允许辅助功能访问。
 2. 为每个快捷键选择目标应用。
@@ -35,14 +35,6 @@ Option / Command / Control + 顶部数字键 1...9
 ```text
 ~/Library/Application Support/com.aix4u.silentswitch/config.json
 ```
-
-### 发布包说明
-
-正式发布包使用 Apple Developer ID 签名，并经过 Apple 公证。macOS 首次打开时应显示开发者为已识别开发者。
-
-如果你下载的是旧版本，或自行运行 `make package` 生成了未公证的本地包，macOS 仍可能提示“无法验证开发者”。请只在信任源码和发布来源时安装。
-
-参考：[打开来自未知开发者的 Mac App - Apple 支持](https://support.apple.com/zh-cn/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac)
 
 ## 快捷键规则
 
@@ -105,24 +97,7 @@ DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer make test
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
-正式发布需要本机 Keychain 里存在 `Developer ID Application` 证书，并先保存 Apple 公证凭据：
-
-```sh
-xcrun notarytool store-credentials "silent-switch-notary" \
-  --apple-id "you@example.com" \
-  --team-id "TEAMID" \
-  --password "app-specific-password"
-
-SILENT_SWITCH_NOTARY_PROFILE=silent-switch-notary make package-notarized
-```
-
-发布脚本默认使用第一张 `Developer ID Application` 证书。需要指定时：
-
-```sh
-SILENT_SWITCH_CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
-SILENT_SWITCH_DEVELOPMENT_TEAM=TEAMID \
-make package-notarized
-```
+正式发布使用 `make package-notarized`，需要本机 Keychain 里存在 `Developer ID Application` 证书和 `silent-switch-notary` 公证凭据。
 
 ## 项目结构
 
