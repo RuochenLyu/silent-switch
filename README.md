@@ -38,9 +38,9 @@ Option / Command / Control + 顶部数字键 1...9
 
 ### 发布包说明
 
-当前发布包没有 Apple 开发者签名，也没有经过 Apple 公证。macOS 首次打开时可能提示“无法验证开发者”，这是预期行为。
+正式发布包使用 Apple Developer ID 签名，并经过 Apple 公证。macOS 首次打开时应显示开发者为已识别开发者。
 
-请只在信任源码和发布来源时安装。若系统拦截打开，可按 Apple 官方说明，在“系统设置 -> 隐私与安全性 -> 安全性”里选择“仍要打开”；更谨慎的做法是从源码自行构建。
+如果你下载的是旧版本，或自行运行 `make package` 生成了未公证的本地包，macOS 仍可能提示“无法验证开发者”。请只在信任源码和发布来源时安装。
 
 参考：[打开来自未知开发者的 Mac App - Apple 支持](https://support.apple.com/zh-cn/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac)
 
@@ -80,6 +80,7 @@ make run           # 构建并打开调试版本
 make build-debug   # 构建调试版本
 make build         # 构建发布版本
 make package       # 构建发布版本并生成安装包
+make package-notarized # 构建、Apple 公证并贴票
 make clean         # 删除 build/
 ```
 
@@ -104,6 +105,25 @@ DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer make test
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
+正式发布需要本机 Keychain 里存在 `Developer ID Application` 证书，并先保存 Apple 公证凭据：
+
+```sh
+xcrun notarytool store-credentials "silent-switch-notary" \
+  --apple-id "you@example.com" \
+  --team-id "TEAMID" \
+  --password "app-specific-password"
+
+SILENT_SWITCH_NOTARY_PROFILE=silent-switch-notary make package-notarized
+```
+
+发布脚本默认使用第一张 `Developer ID Application` 证书。需要指定时：
+
+```sh
+SILENT_SWITCH_CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+SILENT_SWITCH_DEVELOPMENT_TEAM=TEAMID \
+make package-notarized
+```
+
 ## 项目结构
 
 ```text
@@ -121,7 +141,7 @@ scripts/                          构建、测试、运行脚本
 
 ## 不做什么
 
-Silent Switch v1 不做窗口级切换、多修饰键组合、菜单栏入口、程序坞模式、云同步、App Store 沙盒或公证发布包。
+Silent Switch v1 不做窗口级切换、多修饰键组合、菜单栏入口、程序坞模式、云同步或 App Store 沙盒。
 
 ## License
 

@@ -38,9 +38,9 @@ Config is stored at:
 
 ### About Release Builds
 
-Release packages are not signed with a Developer ID and are not notarized by Apple. macOS may warn that it cannot verify the developer on first launch; this is expected.
+Official release packages are signed with an Apple Developer ID and notarized by Apple. On first launch, macOS should show the app as coming from an identified developer.
 
-Only install the package if you trust the source code and the release source. If macOS blocks the app, follow Apple's official instructions and choose `Open Anyway` in `System Settings -> Privacy & Security -> Security`. The more conservative option is to build from source.
+Older downloads, or local packages created with `make package`, may still be unnotarized and macOS may warn that it cannot verify the developer. Only install a package if you trust the source code and the release source.
 
 Reference: [Open a Mac app from an unknown developer - Apple Support](https://support.apple.com/en-nz/guide/mac-help/-mh40616/mac)
 
@@ -80,6 +80,7 @@ make run           # build and open the Debug app
 make build-debug   # build the Debug app
 make build         # build the Release app
 make package       # build the Release app and produce DMG/ZIP
+make package-notarized # build, notarize, and staple the release
 make clean         # remove build/
 ```
 
@@ -104,6 +105,25 @@ Build scripts prefer an existing Apple Development identity, or a local identity
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
+Official releases require a `Developer ID Application` certificate in Keychain and saved Apple notary credentials:
+
+```sh
+xcrun notarytool store-credentials "silent-switch-notary" \
+  --apple-id "you@example.com" \
+  --team-id "TEAMID" \
+  --password "app-specific-password"
+
+SILENT_SWITCH_NOTARY_PROFILE=silent-switch-notary make package-notarized
+```
+
+The release script uses the first `Developer ID Application` identity by default. To select one explicitly:
+
+```sh
+SILENT_SWITCH_CODE_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+SILENT_SWITCH_DEVELOPMENT_TEAM=TEAMID \
+make package-notarized
+```
+
 ## Project Layout
 
 ```text
@@ -121,7 +141,7 @@ User-facing strings live in `SilentSwitch/Resources/Localizable.xcstrings`. Runt
 
 ## Non-Goals
 
-Silent Switch v1 does not support window-level switching, multi-modifier combos, menu bar entry, Dock mode, cloud sync, App Store sandboxing, or notarized binaries.
+Silent Switch v1 does not support window-level switching, multi-modifier combos, menu bar entry, Dock mode, cloud sync, or App Store sandboxing.
 
 ## License
 

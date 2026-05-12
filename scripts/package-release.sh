@@ -3,7 +3,9 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/xcode-env.sh"
 
-"$PROJECT_ROOT/scripts/build-release.sh" >/dev/null
+if [[ "${SILENT_SWITCH_SKIP_BUILD:-0}" != "1" ]]; then
+  "$PROJECT_ROOT/scripts/build-release.sh" >/dev/null
+fi
 
 APP_PATH="$BUILD_DIR/Release/Silent Switch.app"
 INFO_PLIST="$APP_PATH/Contents/Info.plist"

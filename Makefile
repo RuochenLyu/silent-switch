@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-signing test build build-debug build-release package run run-debug run-release clean
+.PHONY: help setup-signing test build build-debug build-release package package-notarized run run-debug run-release clean
 
 help:
 	@printf "%s\n" \
@@ -11,6 +11,7 @@ help:
 		"  make build-debug   Build Debug app into build/Debug" \
 		"  make build-release Build Release app into build/Release" \
 		"  make package       Build Release app and create dist DMG/ZIP" \
+		"  make package-notarized Build, notarize, and staple release DMG/ZIP" \
 		"  make run           Build if needed, then open Debug app" \
 		"  make run-debug     Build if needed, then open Debug app" \
 		"  make run-release   Build if needed, then open Release app" \
@@ -32,6 +33,9 @@ build-release:
 
 package:
 	@./scripts/package-release.sh
+
+package-notarized:
+	@./scripts/package-notarized-release.sh
 
 run: run-debug
 
