@@ -59,15 +59,7 @@ final class AppActivationService: AppActivationServicing {
     }
 
     func activateOrLaunch(_ target: AppTarget) {
-        if let runningApplication = runningApplicationProvider
-            .runningApplications(withBundleIdentifier: target.bundleIdentifier)
-            .first
-        {
-            runningApplication.yieldActivation()
-            let didActivate = runningApplication.activateFromCurrentApplication()
-            if !didActivate {
-                Log.activation.error("Failed to activate running application \(target.bundleIdentifier, privacy: .public)")
-            }
+        if activateRunningApplication(withBundleIdentifier: target.bundleIdentifier) {
             return
         }
 
@@ -78,13 +70,52 @@ final class AppActivationService: AppActivationServicing {
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
+        let bundleIdentifier = target.bundleIdentifier
 
-        NSApp?.yieldActivation(toApplicationWithBundleIdentifier: target.bundleIdentifier)
+        NSApp?.yieldActivation(toApplicationWithBundleIdentifier: bundleIdentifier)
         workspace.openApplication(at: url, configuration: configuration) { _, error in
             if let error {
-                Log.activation.error("Failed to open \(target.bundleIdentifier, privacy: .public): \(String(describing: error), privacy: .public)")
+                Log.activation.error("Failed to open \(bundleIdentifier, privacy: .public): \(String(describing: error), privacy: .public)")
+                return
+            }
+
+            Task { @MainActor [weak self] in
+                await self?.activateLaunchedApplication(withBundleIdentifier: bundleIdentifier)
             }
         }
+    }
+
+    private func activateLaunchedApplication(withBundleIdentifier bundleIdentifier: String) async {
+        for attempt in 1...8 {
+            if activateRunningApplication(withBundleIdentifier: bundleIdentifier, logFailure: attempt == 8) {
+                return
+            }
+
+            if attempt < 8 {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
+
+        Log.activation.error("Opened \(bundleIdentifier, privacy: .public) but could not activate the launched application.")
+    }
+
+    private func activateRunningApplication(
+        withBundleIdentifier bundleIdentifier: String,
+        logFailure: Bool = true
+    ) -> Bool {
+        guard let runningApplication = runningApplicationProvider
+            .runningApplications(withBundleIdentifier: bundleIdentifier)
+            .first
+        else {
+            return false
+        }
+
+        runningApplication.yieldActivation()
+        let didActivate = runningApplication.activateFromCurrentApplication()
+        if !didActivate && logFailure {
+            Log.activation.error("Failed to activate running application \(bundleIdentifier, privacy: .public)")
+        }
+        return didActivate
     }
 
     private func applicationURL(for target: AppTarget) -> URL? {
