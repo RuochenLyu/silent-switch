@@ -92,6 +92,38 @@ final class AppActivationServiceTests: XCTestCase {
         XCTAssertEqual(launchedApplication.activateCallCount, 1)
     }
 
+    func testStaleLaunchRetryDoesNotStealFocusAfterNewShortcutRequest() async {
+        let firstTarget = AppTarget(
+            bundleIdentifier: "com.example.First",
+            displayName: "First",
+            path: "/Applications/First.app"
+        )
+        let secondTarget = AppTarget(
+            bundleIdentifier: "com.example.Second",
+            displayName: "Second",
+            path: "/Applications/Second.app"
+        )
+        let firstApplication = FakeRunningApplication()
+        let secondApplication = FakeRunningApplication()
+        let provider = FakeRunningApplicationProvider(applicationResponsesByBundleIdentifier: [
+            firstTarget.bundleIdentifier: [[], [], [firstApplication]],
+            secondTarget.bundleIdentifier: [[secondApplication]]
+        ])
+        let workspace = FakeWorkspace(resolvedURL: URL(fileURLWithPath: "/Applications/Resolved.app"))
+        let service = AppActivationService(
+            runningApplicationProvider: provider,
+            workspace: workspace
+        )
+
+        service.activateOrLaunch(firstTarget)
+        await Task.yield()
+        service.activateOrLaunch(secondTarget)
+        try? await Task.sleep(nanoseconds: 600_000_000)
+
+        XCTAssertEqual(secondApplication.activateCallCount, 1)
+        XCTAssertEqual(firstApplication.activateCallCount, 0)
+    }
+
     private var sampleTarget: AppTarget {
         AppTarget(
             bundleIdentifier: "com.example.Target",
@@ -104,18 +136,37 @@ final class AppActivationServiceTests: XCTestCase {
 @MainActor
 private final class FakeRunningApplicationProvider: RunningApplicationProviding {
     private var applicationResponses: [[RunningApplicationActivating]]
+    private var applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]
     private(set) var requestedBundleIdentifiers: [String] = []
 
     init(applications: [RunningApplicationActivating]) {
         self.applicationResponses = [applications]
+        self.applicationResponsesByBundleIdentifier = [:]
     }
 
     init(applicationResponses: [[RunningApplicationActivating]]) {
         self.applicationResponses = applicationResponses
+        self.applicationResponsesByBundleIdentifier = [:]
+    }
+
+    init(applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]) {
+        self.applicationResponses = []
+        self.applicationResponsesByBundleIdentifier = applicationResponsesByBundleIdentifier
     }
 
     func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [RunningApplicationActivating] {
         requestedBundleIdentifiers.append(bundleIdentifier)
+
+        if var responses = applicationResponsesByBundleIdentifier[bundleIdentifier] {
+            if responses.count > 1 {
+                let response = responses.removeFirst()
+                applicationResponsesByBundleIdentifier[bundleIdentifier] = responses
+                return response
+            }
+
+            return responses.first ?? []
+        }
+
         if applicationResponses.count > 1 {
             return applicationResponses.removeFirst()
         }
