@@ -20,10 +20,11 @@ final class AppMetadataReaderTests: XCTestCase {
 
 @MainActor
 final class AppActivationServiceTests: XCTestCase {
-    func testActivatesRunningApplicationAndDoesNotLaunch() {
+    func testActivatesAndReopensRunningApplication() {
         let runningApplication = FakeRunningApplication()
         let provider = FakeRunningApplicationProvider(applications: [runningApplication])
-        let workspace = FakeWorkspace()
+        let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
+        let workspace = FakeWorkspace(resolvedURL: applicationURL)
         let service = AppActivationService(
             runningApplicationProvider: provider,
             workspace: workspace
@@ -33,7 +34,9 @@ final class AppActivationServiceTests: XCTestCase {
 
         XCTAssertEqual(runningApplication.activateCallCount, 1)
         XCTAssertEqual(runningApplication.yieldActivationCallCount, 1)
-        XCTAssertNil(workspace.openedURL)
+        XCTAssertEqual(workspace.requestedBundleIdentifier, sampleTarget.bundleIdentifier)
+        XCTAssertEqual(workspace.openedURL, applicationURL)
+        XCTAssertEqual(workspace.openConfigurationActivates, true)
     }
 
     func testLaunchesResolvedBundleIdentifierWhenApplicationIsNotRunning() async {
@@ -185,7 +188,7 @@ private final class FakeRunningApplication: RunningApplicationActivating {
         yieldActivationCallCount += 1
     }
 
-    func activateFromCurrentApplication() -> Bool {
+    func activateAllWindows() -> Bool {
         activateCallCount += 1
         return activationResult
     }

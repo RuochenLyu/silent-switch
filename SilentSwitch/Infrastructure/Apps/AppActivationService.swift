@@ -14,7 +14,7 @@ protocol RunningApplicationProviding {
 @MainActor
 protocol RunningApplicationActivating {
     func yieldActivation()
-    func activateFromCurrentApplication() -> Bool
+    func activateAllWindows() -> Bool
 }
 
 @MainActor
@@ -32,8 +32,8 @@ extension NSRunningApplication: RunningApplicationActivating {
         NSApp?.yieldActivation(to: self)
     }
 
-    func activateFromCurrentApplication() -> Bool {
-        activate(from: NSRunningApplication.current, options: [])
+    func activateAllWindows() -> Bool {
+        activate(options: [.activateAllWindows])
     }
 }
 extension NSWorkspace: WorkspaceApplicationOpening {}
@@ -64,6 +64,7 @@ final class AppActivationService: AppActivationServicing {
         let requestID = activationRequestID
 
         if activateRunningApplication(withBundleIdentifier: target.bundleIdentifier) {
+            reopenRunningApplicationIfPossible(target, requestID: requestID)
             return
         }
 
@@ -133,11 +134,33 @@ final class AppActivationService: AppActivationServicing {
         }
 
         runningApplication.yieldActivation()
-        let didActivate = runningApplication.activateFromCurrentApplication()
+        let didActivate = runningApplication.activateAllWindows()
         if !didActivate && logFailure {
             Log.activation.error("Failed to activate running application \(bundleIdentifier, privacy: .public)")
         }
         return didActivate
+    }
+
+    private func reopenRunningApplicationIfPossible(_ target: AppTarget, requestID: Int) {
+        guard let url = applicationURL(for: target) else {
+            return
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        let bundleIdentifier = target.bundleIdentifier
+
+        workspace.openApplication(at: url, configuration: configuration) { _, error in
+            let errorDescription = error.map { String(describing: $0) }
+
+            Task { @MainActor [weak self] in
+                guard let self, self.isCurrentRequest(requestID), let errorDescription else {
+                    return
+                }
+
+                Log.activation.error("Failed to reopen \(bundleIdentifier, privacy: .public): \(errorDescription, privacy: .public)")
+            }
+        }
     }
 
     private func applicationURL(for target: AppTarget) -> URL? {
