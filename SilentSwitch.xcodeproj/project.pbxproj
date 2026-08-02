@@ -19,7 +19,8 @@
 		01000000000000000000010A /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020A /* SettingsStore.swift */; };
 		01000000000000000000010B /* KeyCodeMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020B /* KeyCodeMap.swift */; };
 		01000000000000000000010C /* HotkeySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020C /* HotkeySnapshot.swift */; };
-		01000000000000000000010D /* EventTapHotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020D /* EventTapHotkeyService.swift */; };
+		01000000000000000000010D /* HotkeyRuntimeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020D /* HotkeyRuntimeController.swift */; };
+		01000000000000000000011B /* HotkeyEventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010000000000000000000220 /* HotkeyEventTap.swift */; };
 		01000000000000000000010E /* AppActivationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020E /* AppActivationService.swift */; };
 		01000000000000000000010F /* AppMetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020F /* AppMetadataReader.swift */; };
 		010000000000000000000110 /* PermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010000000000000000000210 /* PermissionService.swift */; };
@@ -48,6 +49,8 @@
 		01000000000000000000015D /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010000000000000000000212 /* Log.swift */; };
 		01000000000000000000015E /* AppActivationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020E /* AppActivationService.swift */; };
 		01000000000000000000015F /* LoginItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010000000000000000000211 /* LoginItemService.swift */; };
+		010000000000000000000160 /* HotkeyRuntimeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01000000000000000000020D /* HotkeyRuntimeController.swift */; };
+		010000000000000000000161 /* HotkeyEventTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010000000000000000000220 /* HotkeyEventTap.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,7 +66,8 @@
 		01000000000000000000020A /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		01000000000000000000020B /* KeyCodeMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCodeMap.swift; sourceTree = "<group>"; };
 		01000000000000000000020C /* HotkeySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySnapshot.swift; sourceTree = "<group>"; };
-		01000000000000000000020D /* EventTapHotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventTapHotkeyService.swift; sourceTree = "<group>"; };
+		01000000000000000000020D /* HotkeyRuntimeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRuntimeController.swift; sourceTree = "<group>"; };
+		010000000000000000000220 /* HotkeyEventTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyEventTap.swift; sourceTree = "<group>"; };
 		01000000000000000000020E /* AppActivationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivationService.swift; sourceTree = "<group>"; };
 		01000000000000000000020F /* AppMetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMetadataReader.swift; sourceTree = "<group>"; };
 		010000000000000000000210 /* PermissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionService.swift; sourceTree = "<group>"; };
@@ -196,7 +200,7 @@
 		010000000000000000000530 /* Models */ = {isa = PBXGroup; children = (010000000000000000000206 /* AppModels.swift */, ); path = Models; sourceTree = "<group>"; };
 		010000000000000000000531 /* Validation */ = {isa = PBXGroup; children = (010000000000000000000207 /* ShortcutValidator.swift */, 010000000000000000000208 /* ShortcutMatcher.swift */, ); path = Validation; sourceTree = "<group>"; };
 		010000000000000000000532 /* Config */ = {isa = PBXGroup; children = (010000000000000000000209 /* ConfigFileClient.swift */, 01000000000000000000020A /* SettingsStore.swift */, ); path = Config; sourceTree = "<group>"; };
-		010000000000000000000533 /* Hotkeys */ = {isa = PBXGroup; children = (01000000000000000000020B /* KeyCodeMap.swift */, 01000000000000000000020C /* HotkeySnapshot.swift */, 01000000000000000000020D /* EventTapHotkeyService.swift */, ); path = Hotkeys; sourceTree = "<group>"; };
+		010000000000000000000533 /* Hotkeys */ = {isa = PBXGroup; children = (01000000000000000000020B /* KeyCodeMap.swift */, 01000000000000000000020C /* HotkeySnapshot.swift */, 010000000000000000000220 /* HotkeyEventTap.swift */, 01000000000000000000020D /* HotkeyRuntimeController.swift */, ); path = Hotkeys; sourceTree = "<group>"; };
 		010000000000000000000534 /* Apps */ = {isa = PBXGroup; children = (01000000000000000000020E /* AppActivationService.swift */, 01000000000000000000020F /* AppMetadataReader.swift */, ); path = Apps; sourceTree = "<group>"; };
 		010000000000000000000535 /* Permissions */ = {isa = PBXGroup; children = (010000000000000000000210 /* PermissionService.swift */, ); path = Permissions; sourceTree = "<group>"; };
 		010000000000000000000536 /* LoginItems */ = {isa = PBXGroup; children = (010000000000000000000211 /* LoginItemService.swift */, ); path = LoginItems; sourceTree = "<group>"; };
@@ -295,7 +299,8 @@
 				01000000000000000000010A /* SettingsStore.swift in Sources */,
 				01000000000000000000010B /* KeyCodeMap.swift in Sources */,
 				01000000000000000000010C /* HotkeySnapshot.swift in Sources */,
-				01000000000000000000010D /* EventTapHotkeyService.swift in Sources */,
+				01000000000000000000010D /* HotkeyRuntimeController.swift in Sources */,
+				01000000000000000000011B /* HotkeyEventTap.swift in Sources */,
 				01000000000000000000010E /* AppActivationService.swift in Sources */,
 				01000000000000000000010F /* AppMetadataReader.swift in Sources */,
 				010000000000000000000110 /* PermissionService.swift in Sources */,
@@ -329,6 +334,8 @@
 				01000000000000000000015D /* Log.swift in Sources */,
 				01000000000000000000015E /* AppActivationService.swift in Sources */,
 				01000000000000000000015F /* LoginItemService.swift in Sources */,
+				010000000000000000000160 /* HotkeyRuntimeController.swift in Sources */,
+				010000000000000000000161 /* HotkeyEventTap.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,13 +465,13 @@
 					CODE_SIGN_IDENTITY = "-";
 					CODE_SIGN_STYLE = Manual;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 3;
+					CURRENT_PROJECT_VERSION = 4;
 					DEVELOPMENT_TEAM = "";
 					ENABLE_HARDENED_RUNTIME = NO;
 					INFOPLIST_FILE = SilentSwitch/Resources/Info.plist;
 					LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
 					MACOSX_DEPLOYMENT_TARGET = 15.0;
-					MARKETING_VERSION = 1.0.2;
+					MARKETING_VERSION = 1.0.3;
 					PRODUCT_BUNDLE_IDENTIFIER = com.aix4u.silentswitch;
 					PRODUCT_MODULE_NAME = SilentSwitch;
 					PRODUCT_NAME = "Silent Switch";
@@ -482,13 +489,13 @@
 					CODE_SIGN_IDENTITY = "-";
 					CODE_SIGN_STYLE = Manual;
 					COMBINE_HIDPI_IMAGES = YES;
-					CURRENT_PROJECT_VERSION = 3;
+					CURRENT_PROJECT_VERSION = 4;
 					DEVELOPMENT_TEAM = "";
 					ENABLE_HARDENED_RUNTIME = YES;
 					INFOPLIST_FILE = SilentSwitch/Resources/Info.plist;
 					LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks");
 					MACOSX_DEPLOYMENT_TARGET = 15.0;
-					MARKETING_VERSION = 1.0.2;
+					MARKETING_VERSION = 1.0.3;
 					PRODUCT_BUNDLE_IDENTIFIER = com.aix4u.silentswitch;
 					PRODUCT_MODULE_NAME = SilentSwitch;
 					PRODUCT_NAME = "Silent Switch";

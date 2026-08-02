@@ -5,6 +5,7 @@ struct ShortcutSection: View {
     let slots: [Slot]
     let duplicateIDs: Set<UUID>
     let canAddSlot: Bool
+    let monitorState: HotkeyMonitorState
     let appPickerErrorKey: String?
     let metadataReader: AppMetadataReader
     let updateSlot: (Slot) -> Void
@@ -12,9 +13,14 @@ struct ShortcutSection: View {
     let removeSlot: (UUID) -> Void
     let clearTarget: (UUID) -> Void
     let chooseApp: (Slot) -> Void
+    let retryMonitoring: () -> Void
 
     var body: some View {
         SettingsGroup(titleKey: "shortcut.title") {
+            HotkeyStatusRow(state: monitorState, retry: retryMonitoring)
+
+            GroupDivider()
+
             ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
                 ShortcutRow(
                     slot: slot,
@@ -57,6 +63,61 @@ struct ShortcutSection: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+        }
+    }
+}
+
+private struct HotkeyStatusRow: View {
+    let state: HotkeyMonitorState
+    let retry: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Label {
+                Text(statusKey)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } icon: {
+                Image(systemName: symbol)
+                    .foregroundStyle(color)
+            }
+
+            Spacer(minLength: 12)
+
+            if state == .failed || state == .stopped {
+                Button("hotkeys.status.retry", action: retry)
+                    .controlSize(.small)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var statusKey: LocalizedStringKey {
+        switch state {
+        case .stopped: "hotkeys.status.stopped"
+        case .permissionRequired: "hotkeys.status.permissionRequired"
+        case .starting: "hotkeys.status.starting"
+        case .running: "hotkeys.status.running"
+        case .failed: "hotkeys.status.failed"
+        }
+    }
+
+    private var symbol: String {
+        switch state {
+        case .running: "checkmark.circle.fill"
+        case .starting: "arrow.clockwise.circle.fill"
+        case .permissionRequired, .failed: "exclamationmark.triangle.fill"
+        case .stopped: "pause.circle.fill"
+        }
+    }
+
+    private var color: Color {
+        switch state {
+        case .running: .green
+        case .starting, .stopped: .secondary
+        case .permissionRequired, .failed: .orange
         }
     }
 }

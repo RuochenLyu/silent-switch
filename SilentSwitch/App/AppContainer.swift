@@ -2,11 +2,21 @@ import Combine
 import Foundation
 
 @MainActor
+final class HotkeyStatusModel: ObservableObject {
+    @Published private(set) var state: HotkeyMonitorState = .stopped
+
+    func update(_ state: HotkeyMonitorState) {
+        self.state = state
+    }
+}
+
+@MainActor
 final class AppContainer {
     let settingsStore: SettingsStore
     let permissionService: PermissionService
     let loginItemService: LoginItemService
-    let hotkeyService: EventTapHotkeyService
+    let hotkeyStatus: HotkeyStatusModel
+    let hotkeyRuntime: HotkeyRuntimeController
     let appActivationService: AppActivationService
     let appMetadataReader: AppMetadataReader
 
@@ -16,20 +26,22 @@ final class AppContainer {
         settingsStore: SettingsStore,
         permissionService: PermissionService,
         loginItemService: LoginItemService,
-        hotkeyService: EventTapHotkeyService,
+        hotkeyStatus: HotkeyStatusModel,
+        hotkeyRuntime: HotkeyRuntimeController,
         appActivationService: AppActivationService,
         appMetadataReader: AppMetadataReader
     ) {
         self.settingsStore = settingsStore
         self.permissionService = permissionService
         self.loginItemService = loginItemService
-        self.hotkeyService = hotkeyService
+        self.hotkeyStatus = hotkeyStatus
+        self.hotkeyRuntime = hotkeyRuntime
         self.appActivationService = appActivationService
         self.appMetadataReader = appMetadataReader
 
         settingsStore.$config
             .sink { [weak self] config in
-                self?.hotkeyService.updateSnapshot(HotkeySnapshot(config: config))
+                self?.hotkeyRuntime.updateSnapshot(HotkeySnapshot(config: config))
             }
             .store(in: &cancellables)
     }
@@ -39,9 +51,14 @@ final class AppContainer {
         settingsStore.load()
 
         let appActivationService = AppActivationService()
-        let hotkeyService = EventTapHotkeyService { target in
+        let hotkeyStatus = HotkeyStatusModel()
+        let hotkeyRuntime = HotkeyRuntimeController { target in
             Task { @MainActor in
                 appActivationService.activateOrLaunch(target)
+            }
+        } stateDidChange: { state in
+            Task { @MainActor in
+                hotkeyStatus.update(state)
             }
         }
 
@@ -49,12 +66,13 @@ final class AppContainer {
             settingsStore: settingsStore,
             permissionService: PermissionService(),
             loginItemService: LoginItemService(),
-            hotkeyService: hotkeyService,
+            hotkeyStatus: hotkeyStatus,
+            hotkeyRuntime: hotkeyRuntime,
             appActivationService: appActivationService,
             appMetadataReader: AppMetadataReader()
         )
 
-        container.hotkeyService.updateSnapshot(HotkeySnapshot(config: settingsStore.config))
+        container.hotkeyRuntime.updateSnapshot(HotkeySnapshot(config: settingsStore.config))
         return container
     }
 
@@ -62,9 +80,9 @@ final class AppContainer {
         permissionService.refresh()
 
         if permissionService.isAccessibilityTrusted {
-            hotkeyService.startIfPermitted()
+            hotkeyRuntime.startIfPermitted()
         } else {
-            hotkeyService.stop()
+            hotkeyRuntime.stop()
         }
     }
 }

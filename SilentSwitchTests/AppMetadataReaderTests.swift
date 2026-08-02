@@ -20,9 +20,13 @@ final class AppMetadataReaderTests: XCTestCase {
 
 @MainActor
 final class AppActivationServiceTests: XCTestCase {
-    func testActivatesAndReopensRunningApplication() {
+    func testActivatesRunningApplicationFromFrontmostApplicationWithoutReopening() async {
         let runningApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(applications: [runningApplication])
+        let frontmostApplication = FakeRunningApplication()
+        let provider = FakeRunningApplicationProvider(
+            applications: [runningApplication],
+            frontmostApplication: frontmostApplication
+        )
         let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
         let workspace = FakeWorkspace(resolvedURL: applicationURL)
         let service = AppActivationService(
@@ -31,12 +35,11 @@ final class AppActivationServiceTests: XCTestCase {
         )
 
         service.activateOrLaunch(sampleTarget)
+        try? await Task.sleep(for: .milliseconds(250))
 
         XCTAssertEqual(runningApplication.activateCallCount, 1)
-        XCTAssertEqual(runningApplication.yieldActivationCallCount, 1)
-        XCTAssertEqual(workspace.requestedBundleIdentifier, sampleTarget.bundleIdentifier)
-        XCTAssertEqual(workspace.openedURL, applicationURL)
-        XCTAssertEqual(workspace.openConfigurationActivates, true)
+        XCTAssertTrue(runningApplication.activationSource === frontmostApplication)
+        XCTAssertNil(workspace.openedURL)
     }
 
     func testLaunchesResolvedBundleIdentifierWhenApplicationIsNotRunning() async {
@@ -56,7 +59,6 @@ final class AppActivationServiceTests: XCTestCase {
         XCTAssertEqual(workspace.openedURL, applicationURL)
         XCTAssertEqual(workspace.openConfigurationActivates, true)
         XCTAssertEqual(provider.requestedBundleIdentifiers, [sampleTarget.bundleIdentifier, sampleTarget.bundleIdentifier])
-        XCTAssertEqual(launchedApplication.yieldActivationCallCount, 1)
         XCTAssertEqual(launchedApplication.activateCallCount, 1)
     }
 
@@ -91,7 +93,6 @@ final class AppActivationServiceTests: XCTestCase {
 
         XCTAssertEqual(workspace.openedURL, applicationURL)
         XCTAssertEqual(provider.requestedBundleIdentifiers.count, 4)
-        XCTAssertEqual(launchedApplication.yieldActivationCallCount, 1)
         XCTAssertEqual(launchedApplication.activateCallCount, 1)
     }
 
@@ -127,6 +128,24 @@ final class AppActivationServiceTests: XCTestCase {
         XCTAssertEqual(firstApplication.activateCallCount, 0)
     }
 
+    func testReopensRunningApplicationWhenActivationDoesNotMakeItActive() async {
+        let runningApplication = FakeRunningApplication()
+        runningApplication.isActive = false
+        let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
+        let provider = FakeRunningApplicationProvider(applications: [runningApplication])
+        let workspace = FakeWorkspace(resolvedURL: applicationURL)
+        let service = AppActivationService(
+            runningApplicationProvider: provider,
+            workspace: workspace
+        )
+
+        service.activateOrLaunch(sampleTarget)
+        try? await Task.sleep(for: .milliseconds(250))
+
+        XCTAssertEqual(workspace.openedURL, applicationURL)
+        XCTAssertEqual(workspace.openConfigurationActivates, true)
+    }
+
     private var sampleTarget: AppTarget {
         AppTarget(
             bundleIdentifier: "com.example.Target",
@@ -140,21 +159,28 @@ final class AppActivationServiceTests: XCTestCase {
 private final class FakeRunningApplicationProvider: RunningApplicationProviding {
     private var applicationResponses: [[RunningApplicationActivating]]
     private var applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]
+    private let currentFrontmostApplication: RunningApplicationActivating?
     private(set) var requestedBundleIdentifiers: [String] = []
 
-    init(applications: [RunningApplicationActivating]) {
+    init(
+        applications: [RunningApplicationActivating],
+        frontmostApplication: RunningApplicationActivating? = nil
+    ) {
         self.applicationResponses = [applications]
         self.applicationResponsesByBundleIdentifier = [:]
+        self.currentFrontmostApplication = frontmostApplication
     }
 
     init(applicationResponses: [[RunningApplicationActivating]]) {
         self.applicationResponses = applicationResponses
         self.applicationResponsesByBundleIdentifier = [:]
+        self.currentFrontmostApplication = nil
     }
 
     init(applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]) {
         self.applicationResponses = []
         self.applicationResponsesByBundleIdentifier = applicationResponsesByBundleIdentifier
+        self.currentFrontmostApplication = nil
     }
 
     func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [RunningApplicationActivating] {
@@ -176,20 +202,22 @@ private final class FakeRunningApplicationProvider: RunningApplicationProviding 
 
         return applicationResponses.first ?? []
     }
+
+    func frontmostApplication() -> RunningApplicationActivating? {
+        currentFrontmostApplication
+    }
 }
 
 @MainActor
 private final class FakeRunningApplication: RunningApplicationActivating {
     private(set) var activateCallCount = 0
-    private(set) var yieldActivationCallCount = 0
+    private(set) weak var activationSource: FakeRunningApplication?
     var activationResult = true
+    var isActive = true
 
-    func yieldActivation() {
-        yieldActivationCallCount += 1
-    }
-
-    func activateAllWindows() -> Bool {
+    func activateAllWindows(from source: RunningApplicationActivating?) -> Bool {
         activateCallCount += 1
+        activationSource = source as? FakeRunningApplication
         return activationResult
     }
 }

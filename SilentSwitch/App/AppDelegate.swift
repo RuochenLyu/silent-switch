@@ -4,6 +4,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var container: AppContainer?
     private var settingsWindowController: SettingsWindowController?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -15,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         container.refreshPermissionAndHotkeys()
         container.loginItemService.refresh()
+        installWorkspaceObservers()
 
         if !LaunchContext.current.launchedAsLoginItem {
             settingsWindowController.show()
@@ -39,6 +41,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        container?.hotkeyService.stop()
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach(notificationCenter.removeObserver)
+        workspaceObservers.removeAll()
+        container?.hotkeyRuntime.stop()
+    }
+
+    private func installWorkspaceObservers() {
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+        let names: [Notification.Name] = [
+            NSWorkspace.didWakeNotification,
+            NSWorkspace.sessionDidBecomeActiveNotification
+        ]
+
+        workspaceObservers = names.map { name in
+            notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    Log.hotkeys.info("Refreshing event tap after workspace lifecycle change.")
+                    self?.container?.refreshPermissionAndHotkeys()
+                }
+            }
+        }
     }
 }
