@@ -6,6 +6,7 @@ struct SettingsView: View {
     @ObservedObject private var store: SettingsStore
     @ObservedObject private var permissionService: PermissionService
     @ObservedObject private var loginItemService: LoginItemService
+    @ObservedObject private var hotkeyStatus: HotkeyStatusModel
 
     private let container: AppContainer
     @State private var appPickerErrorKey: String?
@@ -16,6 +17,7 @@ struct SettingsView: View {
         self.store = container.settingsStore
         self.permissionService = container.permissionService
         self.loginItemService = container.loginItemService
+        self.hotkeyStatus = container.hotkeyStatus
     }
 
     var body: some View {
@@ -42,13 +44,15 @@ struct SettingsView: View {
                         slots: store.config.slots,
                         duplicateIDs: ShortcutValidator.duplicateSlotIDs(in: store.config.slots),
                         canAddSlot: ShortcutValidator.canAddSlot(to: store.config.slots),
+                        monitorState: hotkeyStatus.state,
                         appPickerErrorKey: appPickerErrorKey,
                         metadataReader: container.appMetadataReader,
                         updateSlot: store.updateSlot,
                         addSlot: store.addSlot,
                         removeSlot: store.removeSlot,
                         clearTarget: store.clearTarget,
-                        chooseApp: chooseApp(for:)
+                        chooseApp: chooseApp(for:),
+                        retryMonitoring: container.refreshPermissionAndHotkeys
                     )
 
                     GeneralSection(

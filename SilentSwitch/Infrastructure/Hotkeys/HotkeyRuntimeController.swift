@@ -1,16 +1,34 @@
 import ApplicationServices
 import Foundation
 
-final class EventTapHotkeyService: @unchecked Sendable {
+enum HotkeyMonitorState: Equatable, Sendable {
+    case stopped
+    case permissionRequired
+    case starting
+    case running
+    case failed
+}
+
+final class HotkeyRuntimeController: @unchecked Sendable {
     private let snapshotLock = NSLock()
     private var snapshot = HotkeySnapshot.empty
     private let activate: @Sendable (AppTarget) -> Void
+    private let permissionCheck: @Sendable () -> Bool
+    private let tapFactory: any HotkeyEventTapCreating
+    private let stateDidChange: @Sendable (HotkeyMonitorState) -> Void
 
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    private var eventTap: (any HotkeyEventTap)?
 
-    init(activate: @escaping @Sendable (AppTarget) -> Void) {
+    init(
+        activate: @escaping @Sendable (AppTarget) -> Void,
+        permissionCheck: @escaping @Sendable () -> Bool = { AXIsProcessTrusted() },
+        tapFactory: any HotkeyEventTapCreating = SystemHotkeyEventTapFactory(),
+        stateDidChange: @escaping @Sendable (HotkeyMonitorState) -> Void = { _ in }
+    ) {
         self.activate = activate
+        self.permissionCheck = permissionCheck
+        self.tapFactory = tapFactory
+        self.stateDidChange = stateDidChange
     }
 
     func updateSnapshot(_ snapshot: HotkeySnapshot) {
@@ -20,59 +38,62 @@ final class EventTapHotkeyService: @unchecked Sendable {
     }
 
     func startIfPermitted() {
-        guard AXIsProcessTrusted() else {
-            stop()
+        guard permissionCheck() else {
+            stop(publishing: .permissionRequired)
             Log.hotkeys.info("Accessibility permission is not granted; event tap not started.")
             return
         }
 
-        guard eventTap == nil else {
+        if let eventTap, eventTap.isValid, eventTap.isEnabled {
+            publish(.running)
             return
         }
 
-        let mask = (1 << CGEventType.keyDown.rawValue)
-            | (1 << CGEventType.tapDisabledByTimeout.rawValue)
-            | (1 << CGEventType.tapDisabledByUserInput.rawValue)
+        if eventTap != nil {
+            Log.hotkeys.info("Event tap was unhealthy and will be recreated.")
+            stop(publishing: nil)
+        }
 
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: CGEventMask(mask),
-            callback: EventTapHotkeyService.eventTapCallback,
+        publish(.starting)
+        guard let tap = tapFactory.makeTap(
+            callback: HotkeyRuntimeController.eventTapCallback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
             Log.hotkeys.error("Failed to create event tap.")
+            publish(.failed)
             return
         }
 
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-
         eventTap = tap
-        runLoopSource = source
+        tap.enable()
+
+        guard tap.isValid, tap.isEnabled else {
+            Log.hotkeys.error("Event tap could not be enabled.")
+            stop(publishing: .failed)
+            return
+        }
+
+        publish(.running)
         Log.hotkeys.info("Event tap started.")
     }
 
     func stop() {
-        if let tap = eventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-            CFMachPortInvalidate(tap)
-        }
+        stop(publishing: .stopped)
+    }
 
-        if let source = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
-        }
-
+    private func stop(publishing state: HotkeyMonitorState?) {
+        eventTap?.invalidate()
         eventTap = nil
-        runLoopSource = nil
+
+        if let state {
+            publish(state)
+        }
     }
 
     private func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
-        guard AXIsProcessTrusted() else {
+        guard permissionCheck() else {
             DispatchQueue.main.async { [weak self] in
-                self?.stop()
+                self?.stop(publishing: .permissionRequired)
             }
             Log.hotkeys.info("Accessibility permission is no longer granted; event tap stopped.")
             return Unmanaged.passUnretained(event)
@@ -100,6 +121,7 @@ final class EventTapHotkeyService: @unchecked Sendable {
 
         let isAutorepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
         if !isAutorepeat {
+            Log.hotkeys.info("Hotkey matched \(target.bundleIdentifier, privacy: .public).")
             activate(target)
         }
 
@@ -115,15 +137,22 @@ final class EventTapHotkeyService: @unchecked Sendable {
     }
 
     private func reenableOrRestartTap(reason: String) {
-        if let eventTap, CFMachPortIsValid(eventTap) {
-            CGEvent.tapEnable(tap: eventTap, enable: true)
-            Log.hotkeys.info("Event tap re-enabled after \(reason, privacy: .public).")
-            return
+        if let eventTap, eventTap.isValid {
+            eventTap.enable()
+            if eventTap.isEnabled {
+                publish(.running)
+                Log.hotkeys.info("Event tap re-enabled after \(reason, privacy: .public).")
+                return
+            }
         }
 
-        stop()
+        stop(publishing: nil)
         startIfPermitted()
         Log.hotkeys.info("Event tap restarted after \(reason, privacy: .public).")
+    }
+
+    private func publish(_ state: HotkeyMonitorState) {
+        stateDidChange(state)
     }
 
     private static let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
@@ -131,7 +160,7 @@ final class EventTapHotkeyService: @unchecked Sendable {
             return Unmanaged.passUnretained(event)
         }
 
-        let service = Unmanaged<EventTapHotkeyService>.fromOpaque(userInfo).takeUnretainedValue()
+        let service = Unmanaged<HotkeyRuntimeController>.fromOpaque(userInfo).takeUnretainedValue()
         return service.handle(type: type, event: event)
     }
 }

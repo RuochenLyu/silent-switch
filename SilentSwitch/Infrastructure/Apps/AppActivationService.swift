@@ -9,12 +9,14 @@ protocol AppActivationServicing: AnyObject {
 @MainActor
 protocol RunningApplicationProviding {
     func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [RunningApplicationActivating]
+    func frontmostApplication() -> RunningApplicationActivating?
 }
 
 @MainActor
 protocol RunningApplicationActivating {
-    func yieldActivation()
-    func activateAllWindows() -> Bool
+    var isActive: Bool { get }
+
+    func activateAllWindows(from source: RunningApplicationActivating?) -> Bool
 }
 
 @MainActor
@@ -28,12 +30,12 @@ protocol WorkspaceApplicationOpening {
 }
 
 extension NSRunningApplication: RunningApplicationActivating {
-    func yieldActivation() {
-        NSApp?.yieldActivation(to: self)
-    }
+    func activateAllWindows(from source: RunningApplicationActivating?) -> Bool {
+        if let source = source as? NSRunningApplication {
+            return activate(from: source, options: [.activateAllWindows])
+        }
 
-    func activateAllWindows() -> Bool {
-        activate(options: [.activateAllWindows])
+        return activate(options: [.activateAllWindows])
     }
 }
 extension NSWorkspace: WorkspaceApplicationOpening {}
@@ -42,6 +44,10 @@ extension NSWorkspace: WorkspaceApplicationOpening {}
 struct SystemRunningApplicationProvider: RunningApplicationProviding {
     func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [RunningApplicationActivating] {
         NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+    }
+
+    func frontmostApplication() -> RunningApplicationActivating? {
+        NSWorkspace.shared.frontmostApplication
     }
 }
 
@@ -63,8 +69,14 @@ final class AppActivationService: AppActivationServicing {
         activationRequestID += 1
         let requestID = activationRequestID
 
-        if activateRunningApplication(withBundleIdentifier: target.bundleIdentifier) {
-            reopenRunningApplicationIfPossible(target, requestID: requestID)
+        if let runningApplication = requestActivationOfRunningApplication(
+            withBundleIdentifier: target.bundleIdentifier
+        ) {
+            verifyRunningApplicationActivation(
+                runningApplication,
+                target: target,
+                requestID: requestID
+            )
             return
         }
 
@@ -102,8 +114,14 @@ final class AppActivationService: AppActivationServicing {
                 return
             }
 
-            if activateRunningApplication(withBundleIdentifier: bundleIdentifier, logFailure: attempt == 8) {
-                return
+            if let runningApplication = requestActivationOfRunningApplication(
+                withBundleIdentifier: bundleIdentifier,
+                logFailure: attempt == 8
+            ) {
+                if runningApplication.isActive {
+                    Log.activation.info("Activated launched application \(bundleIdentifier, privacy: .public).")
+                    return
+                }
             }
 
             if attempt < 8 {
@@ -122,23 +140,51 @@ final class AppActivationService: AppActivationServicing {
         requestID == activationRequestID
     }
 
-    private func activateRunningApplication(
+    private func requestActivationOfRunningApplication(
         withBundleIdentifier bundleIdentifier: String,
         logFailure: Bool = true
-    ) -> Bool {
+    ) -> RunningApplicationActivating? {
         guard let runningApplication = runningApplicationProvider
             .runningApplications(withBundleIdentifier: bundleIdentifier)
             .first
         else {
-            return false
+            return nil
         }
 
-        runningApplication.yieldActivation()
-        let didActivate = runningApplication.activateAllWindows()
+        let source = runningApplicationProvider.frontmostApplication()
+        let didActivate = runningApplication.activateAllWindows(from: source)
         if !didActivate && logFailure {
             Log.activation.error("Failed to activate running application \(bundleIdentifier, privacy: .public)")
         }
-        return didActivate
+
+        if didActivate {
+            Log.activation.info("Activation requested for \(bundleIdentifier, privacy: .public).")
+            return runningApplication
+        }
+
+        return nil
+    }
+
+    private func verifyRunningApplicationActivation(
+        _ runningApplication: RunningApplicationActivating,
+        target: AppTarget,
+        requestID: Int
+    ) {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(200))
+
+            guard let self, self.isCurrentRequest(requestID) else {
+                return
+            }
+
+            if runningApplication.isActive {
+                Log.activation.info("Activated running application \(target.bundleIdentifier, privacy: .public).")
+                return
+            }
+
+            Log.activation.info("Activation did not make \(target.bundleIdentifier, privacy: .public) active; reopening it.")
+            self.reopenRunningApplicationIfPossible(target, requestID: requestID)
+        }
     }
 
     private func reopenRunningApplicationIfPossible(_ target: AppTarget, requestID: Int) {

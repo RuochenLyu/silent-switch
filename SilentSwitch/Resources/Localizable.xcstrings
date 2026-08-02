@@ -103,6 +103,42 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通用" } }
       }
     },
+    "hotkeys.status.failed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring failed to start." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听启动失败。" } }
+      }
+    },
+    "hotkeys.status.permissionRequired" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkeys are paused until Accessibility access is granted." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予辅助功能权限后才能监听快捷键。" } }
+      }
+    },
+    "hotkeys.status.retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新启动" } }
+      }
+    },
+    "hotkeys.status.running" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring is active." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听正常。" } }
+      }
+    },
+    "hotkeys.status.starting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Starting hotkey monitoring…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在启动快捷键监听…" } }
+      }
+    },
+    "hotkeys.status.stopped" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring is stopped." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听已停止。" } }
+      }
+    },
     "language.en" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "English" } },
