@@ -97,7 +97,6 @@ private struct HotkeyStatusRow: View {
     private var statusKey: LocalizedStringKey {
         switch state {
         case .stopped: "hotkeys.status.stopped"
-        case .permissionRequired: "hotkeys.status.permissionRequired"
         case .starting: "hotkeys.status.starting"
         case .running: "hotkeys.status.running"
         case .failed: "hotkeys.status.failed"
@@ -108,7 +107,7 @@ private struct HotkeyStatusRow: View {
         switch state {
         case .running: "checkmark.circle.fill"
         case .starting: "arrow.clockwise.circle.fill"
-        case .permissionRequired, .failed: "exclamationmark.triangle.fill"
+        case .failed: "exclamationmark.triangle.fill"
         case .stopped: "pause.circle.fill"
         }
     }
@@ -117,7 +116,7 @@ private struct HotkeyStatusRow: View {
         switch state {
         case .running: .green
         case .starting, .stopped: .secondary
-        case .permissionRequired, .failed: .orange
+        case .failed: .orange
         }
     }
 }

@@ -15,21 +15,33 @@ final class SettingsStore: ObservableObject {
 
     func load() {
         do {
-            config = try fileClient.load()
+            let loaded = try fileClient.load()
+            let normalized = loaded.normalized()
+            config = normalized
+
+            if normalized != loaded, loaded.version <= AppConfig.currentVersion {
+                do {
+                    try fileClient.save(normalized)
+                } catch {
+                    lastError = "settings.configSaveError"
+                    Log.config.error("Failed to save normalized configuration: \(String(describing: error), privacy: .public)")
+                    return
+                }
+            }
             lastError = nil
         } catch ConfigFileError.fileMissing {
             config = .default
-            persist()
+            persist(config)
         } catch {
             do {
                 _ = try fileClient.backupCorruptConfig()
                 config = .default
-                persist()
-                lastError = "settings.configError"
+                persist(config)
+                lastError = "settings.configReadError"
                 Log.config.error("Configuration was corrupt and has been reset: \(String(describing: error), privacy: .public)")
             } catch {
                 config = .default
-                lastError = "settings.configError"
+                lastError = "settings.configReadError"
                 Log.config.error("Failed to back up corrupt configuration: \(String(describing: error), privacy: .public)")
             }
         }
@@ -82,16 +94,28 @@ final class SettingsStore: ObservableObject {
     private func update(_ transform: (inout AppConfig) -> Void) {
         var next = config
         transform(&next)
-        config = next
-        persist()
+        next = next.normalized()
+
+        guard next != config else {
+            return
+        }
+
+        do {
+            try fileClient.save(next)
+            config = next
+            lastError = nil
+        } catch {
+            lastError = "settings.configSaveError"
+            Log.config.error("Failed to save configuration: \(String(describing: error), privacy: .public)")
+        }
     }
 
-    private func persist() {
+    private func persist(_ config: AppConfig) {
         do {
             try fileClient.save(config)
             lastError = nil
         } catch {
-            lastError = "settings.configError"
+            lastError = "settings.configSaveError"
             Log.config.error("Failed to save configuration: \(String(describing: error), privacy: .public)")
         }
     }

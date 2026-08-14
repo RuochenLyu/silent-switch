@@ -13,7 +13,6 @@ final class HotkeyStatusModel: ObservableObject {
 @MainActor
 final class AppContainer {
     let settingsStore: SettingsStore
-    let permissionService: PermissionService
     let loginItemService: LoginItemService
     let hotkeyStatus: HotkeyStatusModel
     let hotkeyRuntime: HotkeyRuntimeController
@@ -24,7 +23,6 @@ final class AppContainer {
 
     private init(
         settingsStore: SettingsStore,
-        permissionService: PermissionService,
         loginItemService: LoginItemService,
         hotkeyStatus: HotkeyStatusModel,
         hotkeyRuntime: HotkeyRuntimeController,
@@ -32,7 +30,6 @@ final class AppContainer {
         appMetadataReader: AppMetadataReader
     ) {
         self.settingsStore = settingsStore
-        self.permissionService = permissionService
         self.loginItemService = loginItemService
         self.hotkeyStatus = hotkeyStatus
         self.hotkeyRuntime = hotkeyRuntime
@@ -53,18 +50,13 @@ final class AppContainer {
         let appActivationService = AppActivationService()
         let hotkeyStatus = HotkeyStatusModel()
         let hotkeyRuntime = HotkeyRuntimeController { target in
-            Task { @MainActor in
-                appActivationService.activateOrLaunch(target)
-            }
+            appActivationService.activateOrLaunch(target)
         } stateDidChange: { state in
-            Task { @MainActor in
-                hotkeyStatus.update(state)
-            }
+            hotkeyStatus.update(state)
         }
 
         let container = AppContainer(
             settingsStore: settingsStore,
-            permissionService: PermissionService(),
             loginItemService: LoginItemService(),
             hotkeyStatus: hotkeyStatus,
             hotkeyRuntime: hotkeyRuntime,
@@ -76,13 +68,7 @@ final class AppContainer {
         return container
     }
 
-    func refreshPermissionAndHotkeys() {
-        permissionService.refresh()
-
-        if permissionService.isAccessibilityTrusted {
-            hotkeyRuntime.startIfPermitted()
-        } else {
-            hotkeyRuntime.stop()
-        }
+    func refreshHotkeys() {
+        hotkeyRuntime.start()
     }
 }

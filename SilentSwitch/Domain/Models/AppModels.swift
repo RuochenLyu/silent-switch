@@ -122,4 +122,31 @@ struct AppConfig: Codable, Hashable, Sendable {
             ]
         )
     }
+
+    func normalized() -> AppConfig {
+        var result = self
+        if result.version <= Self.currentVersion {
+            result.version = Self.currentVersion
+        }
+        result.slots = Array(result.slots.prefix(ShortcutValidator.maxSlotCount))
+
+        var seenIDs: Set<UUID> = []
+        for index in result.slots.indices {
+            if !seenIDs.insert(result.slots[index].id).inserted {
+                result.slots[index].id = UUID()
+                seenIDs.insert(result.slots[index].id)
+            }
+
+            if !result.slots[index].shortcut.isValid {
+                result.slots[index].shortcut.digit = min(max(result.slots[index].shortcut.digit, 1), 9)
+                result.slots[index].enabled = false
+            }
+        }
+
+        if result.slots.isEmpty {
+            result.slots = [Slot.defaultSlot(digit: 1)]
+        }
+
+        return result
+    }
 }

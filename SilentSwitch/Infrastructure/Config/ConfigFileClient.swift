@@ -59,14 +59,10 @@ struct ConfigFileClient: ConfigFileClienting {
     func backupCorruptConfig() throws -> URL {
         let timestamp = ConfigFileClient.backupTimestamp()
         let backupURL = configURL.deletingLastPathComponent()
-            .appendingPathComponent("config.json.corrupt-\(timestamp)")
+            .appendingPathComponent("config.json.corrupt-\(timestamp)-\(UUID().uuidString)")
 
         guard fileManager.fileExists(atPath: configURL.path) else {
             return backupURL
-        }
-
-        if fileManager.fileExists(atPath: backupURL.path) {
-            try fileManager.removeItem(at: backupURL)
         }
 
         try fileManager.moveItem(at: configURL, to: backupURL)

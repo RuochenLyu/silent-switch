@@ -63,7 +63,12 @@ if /usr/bin/codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | /usr/bin/gre
 fi
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST")"
-ARCH="$(uname -m)"
+ARCHS="$(/usr/bin/lipo -archs "$APP_PATH/Contents/MacOS/Silent Switch")"
+if [[ "$ARCHS" == *"arm64"* && "$ARCHS" == *"x86_64"* ]]; then
+  ARCH="universal"
+else
+  ARCH="${ARCHS// /-}"
+fi
 PACKAGE_BASENAME="SilentSwitch-${VERSION}-macos-${ARCH}"
 DIST_DIR="$PROJECT_ROOT/dist"
 NOTARIZATION_DIR="$BUILD_DIR/Notarization"

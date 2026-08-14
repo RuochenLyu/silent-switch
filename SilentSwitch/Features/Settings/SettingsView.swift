@@ -4,18 +4,15 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject private var store: SettingsStore
-    @ObservedObject private var permissionService: PermissionService
     @ObservedObject private var loginItemService: LoginItemService
     @ObservedObject private var hotkeyStatus: HotkeyStatusModel
 
     private let container: AppContainer
     @State private var appPickerErrorKey: String?
-    @State private var loginError: String?
 
     init(container: AppContainer) {
         self.container = container
         self.store = container.settingsStore
-        self.permissionService = container.permissionService
         self.loginItemService = container.loginItemService
         self.hotkeyStatus = container.hotkeyStatus
     }
@@ -26,18 +23,6 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     if let lastError = store.lastError {
                         InlineMessage(messageKey: lastError, tone: .error)
-                    }
-
-                    if !permissionService.isAccessibilityTrusted {
-                        PermissionCallout(
-                            request: {
-                                permissionService.requestAccessibilityPermission()
-                                container.refreshPermissionAndHotkeys()
-                            },
-                            recheck: {
-                                container.refreshPermissionAndHotkeys()
-                            }
-                        )
                     }
 
                     ShortcutSection(
@@ -52,13 +37,12 @@ struct SettingsView: View {
                         removeSlot: store.removeSlot,
                         clearTarget: store.clearTarget,
                         chooseApp: chooseApp(for:),
-                        retryMonitoring: container.refreshPermissionAndHotkeys
+                        retryMonitoring: container.refreshHotkeys
                     )
 
                     GeneralSection(
                         language: store.config.language,
                         status: loginItemService.status,
-                        loginError: loginError,
                         setLanguage: store.setLanguage,
                         setLaunchAtLogin: setLaunchAtLogin,
                         openLoginItemsSettings: loginItemService.openLoginItemsSettings
@@ -103,7 +87,7 @@ struct SettingsView: View {
         } catch AppMetadataReaderError.missingBundleIdentifier {
             appPickerErrorKey = "shortcut.invalidApp"
         } catch {
-            appPickerErrorKey = "common.error"
+            appPickerErrorKey = "shortcut.appReadFailed"
         }
     }
 
@@ -111,9 +95,8 @@ struct SettingsView: View {
         do {
             try loginItemService.setEnabled(enabled)
             store.setLaunchAtLogin(enabled)
-            loginError = nil
         } catch {
-            loginError = error.localizedDescription
+            // LoginItemService publishes the localized system error.
         }
     }
 }

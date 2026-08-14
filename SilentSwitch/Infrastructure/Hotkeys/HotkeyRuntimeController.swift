@@ -1,166 +1,90 @@
-import ApplicationServices
 import Foundation
 
 enum HotkeyMonitorState: Equatable, Sendable {
     case stopped
-    case permissionRequired
     case starting
     case running
     case failed
 }
 
-final class HotkeyRuntimeController: @unchecked Sendable {
-    private let snapshotLock = NSLock()
+@MainActor
+final class HotkeyRuntimeController {
     private var snapshot = HotkeySnapshot.empty
-    private let activate: @Sendable (AppTarget) -> Void
-    private let permissionCheck: @Sendable () -> Bool
-    private let tapFactory: any HotkeyEventTapCreating
-    private let stateDidChange: @Sendable (HotkeyMonitorState) -> Void
-
-    private var eventTap: (any HotkeyEventTap)?
+    private var pressedShortcuts: Set<Shortcut> = []
+    private let activate: (AppTarget) -> Void
+    private let registrar: any HotkeyRegistering
+    private let stateDidChange: (HotkeyMonitorState) -> Void
 
     init(
-        activate: @escaping @Sendable (AppTarget) -> Void,
-        permissionCheck: @escaping @Sendable () -> Bool = { AXIsProcessTrusted() },
-        tapFactory: any HotkeyEventTapCreating = SystemHotkeyEventTapFactory(),
-        stateDidChange: @escaping @Sendable (HotkeyMonitorState) -> Void = { _ in }
+        activate: @escaping (AppTarget) -> Void,
+        registrar: any HotkeyRegistering = SystemHotkeyRegistrar(),
+        stateDidChange: @escaping (HotkeyMonitorState) -> Void = { _ in }
     ) {
         self.activate = activate
-        self.permissionCheck = permissionCheck
-        self.tapFactory = tapFactory
+        self.registrar = registrar
         self.stateDidChange = stateDidChange
     }
 
     func updateSnapshot(_ snapshot: HotkeySnapshot) {
-        snapshotLock.lock()
         self.snapshot = snapshot
-        snapshotLock.unlock()
+        pressedShortcuts.removeAll()
+
+        if registrar.isRunning {
+            registerCurrentSnapshot()
+        }
     }
 
-    func startIfPermitted() {
-        guard permissionCheck() else {
-            stop(publishing: .permissionRequired)
-            Log.hotkeys.info("Accessibility permission is not granted; event tap not started.")
-            return
-        }
-
-        if let eventTap, eventTap.isValid, eventTap.isEnabled {
-            publish(.running)
-            return
-        }
-
-        if eventTap != nil {
-            Log.hotkeys.info("Event tap was unhealthy and will be recreated.")
-            stop(publishing: nil)
-        }
-
+    func start() {
         publish(.starting)
-        guard let tap = tapFactory.makeTap(
-            callback: HotkeyRuntimeController.eventTapCallback,
-            userInfo: Unmanaged.passUnretained(self).toOpaque()
-        ) else {
-            Log.hotkeys.error("Failed to create event tap.")
-            publish(.failed)
-            return
-        }
 
-        eventTap = tap
-        tap.enable()
-
-        guard tap.isValid, tap.isEnabled else {
-            Log.hotkeys.error("Event tap could not be enabled.")
-            stop(publishing: .failed)
-            return
-        }
-
-        publish(.running)
-        Log.hotkeys.info("Event tap started.")
-    }
-
-    func stop() {
-        stop(publishing: .stopped)
-    }
-
-    private func stop(publishing state: HotkeyMonitorState?) {
-        eventTap?.invalidate()
-        eventTap = nil
-
-        if let state {
-            publish(state)
-        }
-    }
-
-    private func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
-        guard permissionCheck() else {
-            DispatchQueue.main.async { [weak self] in
-                self?.stop(publishing: .permissionRequired)
-            }
-            Log.hotkeys.info("Accessibility permission is no longer granted; event tap stopped.")
-            return Unmanaged.passUnretained(event)
-        }
-
-        switch type {
-        case .tapDisabledByTimeout:
-            reenableOrRestartTap(reason: "timeout")
-            return Unmanaged.passUnretained(event)
-        case .tapDisabledByUserInput:
-            reenableOrRestartTap(reason: "user input")
-            return Unmanaged.passUnretained(event)
-        case .keyDown:
-            break
-        default:
-            return Unmanaged.passUnretained(event)
-        }
-
-        let keyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
-        let flags = event.flags
-
-        guard let target = currentTarget(forKeyCode: keyCode, flags: flags) else {
-            return Unmanaged.passUnretained(event)
-        }
-
-        let isAutorepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
-        if !isAutorepeat {
-            Log.hotkeys.info("Hotkey matched \(target.bundleIdentifier, privacy: .public).")
-            activate(target)
-        }
-
-        return nil
-    }
-
-    private func currentTarget(forKeyCode keyCode: CGKeyCode, flags: CGEventFlags) -> AppTarget? {
-        snapshotLock.lock()
-        let currentSnapshot = snapshot
-        snapshotLock.unlock()
-
-        return ShortcutMatcher.target(forKeyCode: keyCode, flags: flags, snapshot: currentSnapshot)
-    }
-
-    private func reenableOrRestartTap(reason: String) {
-        if let eventTap, eventTap.isValid {
-            eventTap.enable()
-            if eventTap.isEnabled {
-                publish(.running)
-                Log.hotkeys.info("Event tap re-enabled after \(reason, privacy: .public).")
+        if !registrar.isRunning {
+            guard registrar.start(handler: { [weak self] shortcut, event in
+                self?.handle(shortcut: shortcut, event: event)
+            }) else {
+                Log.hotkeys.error("Failed to start global hotkey handler.")
+                publish(.failed)
                 return
             }
         }
 
-        stop(publishing: nil)
-        startIfPermitted()
-        Log.hotkeys.info("Event tap restarted after \(reason, privacy: .public).")
+        pressedShortcuts.removeAll()
+        registerCurrentSnapshot()
+    }
+
+    func stop() {
+        registrar.stop()
+        pressedShortcuts.removeAll()
+        publish(.stopped)
+    }
+
+    private func registerCurrentSnapshot() {
+        let failures = registrar.replaceRegistrations(with: Set(snapshot.routes.keys))
+
+        if failures.isEmpty {
+            publish(.running)
+            Log.hotkeys.info("Global hotkeys registered: \(self.snapshot.routes.count, privacy: .public).")
+        } else {
+            publish(.failed)
+            Log.hotkeys.error("Some global hotkeys could not be registered: \(failures.count, privacy: .public).")
+        }
+    }
+
+    private func handle(shortcut: Shortcut, event: HotkeyEvent) {
+        switch event {
+        case .released:
+            pressedShortcuts.remove(shortcut)
+        case .pressed:
+            guard pressedShortcuts.insert(shortcut).inserted,
+                  let target = snapshot.routes[shortcut] else {
+                return
+            }
+
+            Log.hotkeys.info("Hotkey matched \(target.bundleIdentifier, privacy: .public).")
+            activate(target)
+        }
     }
 
     private func publish(_ state: HotkeyMonitorState) {
         stateDidChange(state)
-    }
-
-    private static let eventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
-        guard let userInfo else {
-            return Unmanaged.passUnretained(event)
-        }
-
-        let service = Unmanaged<HotkeyRuntimeController>.fromOpaque(userInfo).takeUnretainedValue()
-        return service.handle(type: type, event: event)
     }
 }

@@ -43,52 +43,40 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
       }
     },
-    "common.error" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Error" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "错误" } }
-      }
-    },
-    "common.recheck" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recheck" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新检查" } }
-      }
-    },
     "danger.quit" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit App" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出应用" } }
       }
     },
     "quit.confirm.message" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quitting stops all hotkeys. Closing the window keeps them active in the background." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出后将停止监听快捷键。只关闭窗口会继续在后台运行。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quitting disables all shortcuts. Closing the settings window keeps Silent Switch running in the background." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出应用会停用所有快捷键；关闭设置窗口则会继续在后台运行。" } }
       }
     },
     "quit.confirm.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit?" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "要退出吗？" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit Silent Switch?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出 Silent Switch？" } }
       }
     },
     "runtime.status.description" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quitting stops hotkeys. Closing the window keeps them active." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出后会停止监听快捷键；关闭窗口不会退出。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Closing this window keeps Silent Switch running in the background." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭设置窗口后，Silent Switch 仍会在后台运行。" } }
       }
     },
     "runtime.status.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit Silent Switch" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出 Silent Switch" } }
       }
     },
     "general.launchAtLogin.description" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start quietly after login without opening the settings window." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录后自动在后台启动，不显示设置窗口。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Run quietly in the background after login without opening Settings." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录后静默在后台运行，不打开设置窗口。" } }
       }
     },
     "general.openLoginItems" : {
@@ -105,38 +93,32 @@
     },
     "hotkeys.status.failed" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring failed to start." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听启动失败。" } }
-      }
-    },
-    "hotkeys.status.permissionRequired" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkeys are paused until Accessibility access is granted." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予辅助功能权限后才能监听快捷键。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shortcuts could not be enabled. Check for conflicts with other apps, then try again." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键启用失败。请检查是否与其他应用冲突，然后重试。" } }
       }
     },
     "hotkeys.status.retry" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restart" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重新启动" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try Again" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } }
       }
     },
     "hotkeys.status.running" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring is active." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听正常。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shortcuts are ready." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键已就绪。" } }
       }
     },
     "hotkeys.status.starting" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Starting hotkey monitoring…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在启动快捷键监听…" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enabling shortcuts…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在启用快捷键…" } }
       }
     },
     "hotkeys.status.stopped" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hotkey monitoring is stopped." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键监听已停止。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shortcuts are disabled." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键已停用。" } }
       }
     },
     "language.en" : {
@@ -159,38 +141,20 @@
     },
     "language.zhHans" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chinese" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "中文" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Simplified Chinese" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "简体中文" } }
       }
     },
     "login.requiresApproval" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Approval required in System Settings → General → Login Items." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要在 系统设置 → 通用 → 登录项 中批准。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow Silent Switch in System Settings → General → Login Items." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请前往“系统设置”→“通用”→“登录项”批准 Silent Switch。" } }
       }
     },
     "login.toggle" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录时启动" } }
-      }
-    },
-    "permission.missing.description" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grant Accessibility access to catch matching hotkeys. Other keys pass through unchanged." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予辅助功能权限后，才能拦截匹配的快捷键；其他按键会原样放行。" } }
-      }
-    },
-    "permission.missing.short" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Accessibility access is required. Hotkeys are paused." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要辅助功能权限，快捷键暂未生效。" } }
-      }
-    },
-    "permission.request" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grant Access" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "授予权限" } }
       }
     },
     "modifier.command" : {
@@ -211,10 +175,22 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "⌥ Option" } }
       }
     },
-    "settings.configError" : {
+    "settings.configReadError" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The local configuration was reset because it could not be read." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地配置无法读取，已恢复默认配置。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The settings file could not be read. Silent Switch restored the default settings." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置文件无法读取，已恢复默认设置。" } }
+      }
+    },
+    "settings.configSaveError" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings could not be saved. Your latest change was not applied." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法保存设置，本次更改未生效。" } }
+      }
+    },
+    "shortcut.appReadFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected app could not be read. Choose another app and try again." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法读取所选应用，请选择其他应用后重试。" } }
       }
     },
     "shortcut.chooseApp" : {
@@ -231,8 +207,8 @@
     },
     "shortcut.duplicateWarning" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Duplicate shortcut. This one will be ignored." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "快捷键重复，这一项不会生效。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This combination is assigned more than once. All duplicates are disabled." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这个组合键已重复分配，所有重复项均不会生效。" } }
       }
     },
     "shortcut.digit" : {
@@ -255,14 +231,14 @@
     },
     "shortcut.invalidApp" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected app has no bundle identifier." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "所选应用缺少 Bundle ID。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This app cannot be added because it has no bundle identifier." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法添加这个应用，因为它缺少 Bundle ID。" } }
       }
     },
     "shortcut.maxSlots" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Up to 9 shortcut slots are supported." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最多支持 9 个快捷键。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You can add up to 9 shortcuts." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "最多可添加 9 个快捷键。" } }
       }
     },
     "shortcut.modifier" : {
@@ -273,8 +249,8 @@
     },
     "shortcut.remove" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove slot" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除快捷键" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove this shortcut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除此快捷键" } }
       }
     },
     "shortcut.title" : {
@@ -286,7 +262,7 @@
     "shortcut.addSlot" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Shortcut" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新增快捷键" } }
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加快捷键" } }
       }
     }
   },

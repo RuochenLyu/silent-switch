@@ -64,7 +64,7 @@ final class ConfigTests: XCTestCase {
         store.load()
 
         XCTAssertEqual(store.config, .default)
-        XCTAssertEqual(store.lastError, "settings.configError")
+        XCTAssertEqual(store.lastError, "settings.configReadError")
 
         let backups = try FileManager.default.contentsOfDirectory(
             at: directory,
@@ -82,11 +82,92 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(decoded, .zhHans)
     }
 
+    func testNormalizationRepairsUnsafePersistedValues() {
+        let duplicateID = UUID()
+        var config = AppConfig(
+            version: 99,
+            language: .en,
+            launchAtLogin: false,
+            slots: (0..<12).map { index in
+                Slot(
+                    id: duplicateID,
+                    enabled: true,
+                    shortcut: Shortcut(modifier: .option, digit: index),
+                    target: nil
+                )
+            }
+        )
+
+        config = config.normalized()
+
+        XCTAssertEqual(config.version, 99)
+        XCTAssertEqual(config.slots.count, ShortcutValidator.maxSlotCount)
+        XCTAssertEqual(Set(config.slots.map(\.id)).count, config.slots.count)
+        XCTAssertTrue(config.slots.allSatisfy { $0.shortcut.isValid })
+        XCTAssertFalse(config.slots[0].enabled)
+    }
+
+    func testNormalizationRestoresAtLeastOneSlot() {
+        let config = AppConfig(
+            version: 1,
+            language: .system,
+            launchAtLogin: false,
+            slots: []
+        ).normalized()
+
+        XCTAssertEqual(config.slots.count, 1)
+        XCTAssertEqual(config.slots[0].shortcut.digit, 1)
+    }
+
+    func testNormalizationMigratesOlderConfigVersion() {
+        var config = AppConfig.default
+        config.version = 0
+
+        XCTAssertEqual(config.normalized().version, AppConfig.currentVersion)
+    }
+
+    @MainActor
+    func testFailedSaveDoesNotPublishUnsavedConfiguration() {
+        let client = FailingSaveConfigFileClient(config: .default)
+        let store = SettingsStore(fileClient: client)
+        store.load()
+
+        store.setLanguage(.en)
+
+        XCTAssertEqual(store.config.language, .system)
+        XCTAssertEqual(store.lastError, "settings.configSaveError")
+    }
+
     private func temporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("SilentSwitchTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
+    }
+}
+
+private enum TestConfigError: Error {
+    case saveFailed
+}
+
+private final class FailingSaveConfigFileClient: ConfigFileClienting {
+    let configURL = URL(fileURLWithPath: "/tmp/SilentSwitchTests/config.json")
+    private let config: AppConfig
+
+    init(config: AppConfig) {
+        self.config = config
+    }
+
+    func load() throws -> AppConfig {
+        config
+    }
+
+    func save(_ config: AppConfig) throws {
+        throw TestConfigError.saveFailed
+    }
+
+    func backupCorruptConfig() throws -> URL {
+        configURL.appendingPathExtension("backup")
     }
 }
 

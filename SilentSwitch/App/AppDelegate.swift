@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.container = container
         self.settingsWindowController = settingsWindowController
 
-        container.refreshPermissionAndHotkeys()
+        container.refreshHotkeys()
         container.loginItemService.refresh()
         installWorkspaceObservers()
 
@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
-        container?.refreshPermissionAndHotkeys()
+        container?.refreshHotkeys()
         container?.loginItemService.refresh()
     }
 
@@ -57,8 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         workspaceObservers = names.map { name in
             notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in
-                    Log.hotkeys.info("Refreshing event tap after workspace lifecycle change.")
-                    self?.container?.refreshPermissionAndHotkeys()
+                    Log.hotkeys.info("Refreshing global hotkeys after workspace lifecycle change.")
+                    self?.container?.refreshHotkeys()
                 }
             }
         }

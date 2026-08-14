@@ -33,6 +33,12 @@ struct AppMetadataReader {
     }
 
     func icon(for target: AppTarget) -> NSImage {
+        if let resolvedURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: target.bundleIdentifier
+        ) {
+            return NSWorkspace.shared.icon(forFile: resolvedURL.path)
+        }
+
         if let path = target.path {
             return NSWorkspace.shared.icon(forFile: path)
         }

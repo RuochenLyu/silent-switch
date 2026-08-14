@@ -3,7 +3,6 @@ import SwiftUI
 struct GeneralSection: View {
     let language: AppLanguage
     let status: LoginItemStatus
-    let loginError: String?
     let setLanguage: (AppLanguage) -> Void
     let setLaunchAtLogin: (Bool) -> Void
     let openLoginItemsSettings: () -> Void
@@ -21,7 +20,6 @@ struct GeneralSection: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .labelsHidden()
-                .disabled(status == .requiresApproval)
             }
 
             if status == .requiresApproval {
@@ -46,12 +44,6 @@ struct GeneralSection: View {
             if case .error(let message) = status {
                 GroupDivider()
                 InlineMessage(messageKey: message, tone: .error)
-                    .padding(10)
-            }
-
-            if let loginError {
-                GroupDivider()
-                InlineMessage(messageKey: loginError, tone: .error)
                     .padding(10)
             }
 
