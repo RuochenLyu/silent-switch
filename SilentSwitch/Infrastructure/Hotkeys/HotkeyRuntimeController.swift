@@ -11,23 +11,27 @@ enum HotkeyMonitorState: Equatable, Sendable {
 final class HotkeyRuntimeController {
     private var snapshot = HotkeySnapshot.empty
     private var pressedShortcuts: Set<Shortcut> = []
+    private var releaseWatchdogs: [Shortcut: Task<Void, Never>] = [:]
     private let activate: (AppTarget) -> Void
     private let registrar: any HotkeyRegistering
     private let stateDidChange: (HotkeyMonitorState) -> Void
+    private let stuckKeyTimeout: Duration
 
     init(
         activate: @escaping (AppTarget) -> Void,
         registrar: any HotkeyRegistering = SystemHotkeyRegistrar(),
-        stateDidChange: @escaping (HotkeyMonitorState) -> Void = { _ in }
+        stateDidChange: @escaping (HotkeyMonitorState) -> Void = { _ in },
+        stuckKeyTimeout: Duration = .seconds(1)
     ) {
         self.activate = activate
         self.registrar = registrar
         self.stateDidChange = stateDidChange
+        self.stuckKeyTimeout = stuckKeyTimeout
     }
 
     func updateSnapshot(_ snapshot: HotkeySnapshot) {
         self.snapshot = snapshot
-        pressedShortcuts.removeAll()
+        resetPressedShortcuts()
 
         if registrar.isRunning {
             registerCurrentSnapshot()
@@ -37,23 +41,25 @@ final class HotkeyRuntimeController {
     func start() {
         publish(.starting)
 
-        if !registrar.isRunning {
-            guard registrar.start(handler: { [weak self] shortcut, event in
-                self?.handle(shortcut: shortcut, event: event)
-            }) else {
-                Log.hotkeys.error("Failed to start global hotkey handler.")
-                publish(.failed)
-                return
-            }
+        if registrar.isRunning {
+            registrar.stop()
         }
 
-        pressedShortcuts.removeAll()
+        guard registrar.start(handler: { [weak self] shortcut, event in
+            self?.handle(shortcut: shortcut, event: event)
+        }) else {
+            Log.hotkeys.error("Failed to start global hotkey handler.")
+            publish(.failed)
+            return
+        }
+
+        resetPressedShortcuts()
         registerCurrentSnapshot()
     }
 
     func stop() {
         registrar.stop()
-        pressedShortcuts.removeAll()
+        resetPressedShortcuts()
         publish(.stopped)
     }
 
@@ -72,16 +78,38 @@ final class HotkeyRuntimeController {
     private func handle(shortcut: Shortcut, event: HotkeyEvent) {
         switch event {
         case .released:
-            pressedShortcuts.remove(shortcut)
+            clearPressedShortcut(shortcut)
         case .pressed:
             guard pressedShortcuts.insert(shortcut).inserted,
                   let target = snapshot.routes[shortcut] else {
                 return
             }
 
+            releaseWatchdogs[shortcut]?.cancel()
+            releaseWatchdogs[shortcut] = Task { @MainActor [weak self] in
+                do {
+                    try await Task.sleep(for: self?.stuckKeyTimeout ?? .seconds(1))
+                } catch {
+                    return
+                }
+
+                self?.clearPressedShortcut(shortcut)
+            }
+
             Log.hotkeys.info("Hotkey matched \(target.bundleIdentifier, privacy: .public).")
             activate(target)
         }
+    }
+
+    private func clearPressedShortcut(_ shortcut: Shortcut) {
+        pressedShortcuts.remove(shortcut)
+        releaseWatchdogs.removeValue(forKey: shortcut)?.cancel()
+    }
+
+    private func resetPressedShortcuts() {
+        pressedShortcuts.removeAll()
+        releaseWatchdogs.values.forEach { $0.cancel() }
+        releaseWatchdogs.removeAll()
     }
 
     private func publish(_ state: HotkeyMonitorState) {

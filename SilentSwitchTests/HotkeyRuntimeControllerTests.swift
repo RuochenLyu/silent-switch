@@ -9,7 +9,7 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         path: nil
     )
 
-    func testRefreshKeepsHandlerAndReplacesRegistrations() {
+    func testRefreshRecreatesHandlerAndReplacesRegistrations() {
         let registrar = FakeHotkeyRegistrar()
         let states = HotkeyStateRecorder()
         let service = makeService(registrar: registrar, states: states)
@@ -18,7 +18,8 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         service.start()
         service.start()
 
-        XCTAssertEqual(registrar.startCallCount, 1)
+        XCTAssertEqual(registrar.startCallCount, 2)
+        XCTAssertEqual(registrar.stopCallCount, 1)
         XCTAssertEqual(registrar.registrationHistory, [[shortcut], [shortcut]])
         XCTAssertEqual(states.values.last, .running)
     }
@@ -74,6 +75,25 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         XCTAssertEqual(activatedTargets, [target, target])
     }
 
+    func testMissingReleaseDoesNotPermanentlyBlockShortcut() async {
+        let registrar = FakeHotkeyRegistrar()
+        var activatedTargets: [AppTarget] = []
+        let service = HotkeyRuntimeController(
+            activate: { activatedTargets.append($0) },
+            registrar: registrar,
+            stuckKeyTimeout: .milliseconds(20)
+        )
+        service.updateSnapshot(HotkeySnapshot(routes: [shortcut: target]))
+        service.start()
+
+        registrar.send(shortcut, .pressed)
+        registrar.send(shortcut, .pressed)
+        try? await Task.sleep(for: .milliseconds(40))
+        registrar.send(shortcut, .pressed)
+
+        XCTAssertEqual(activatedTargets, [target, target])
+    }
+
     func testSystemRegistrarCanInstallAndRegisterAHotkey() {
         let registrar = SystemHotkeyRegistrar()
         let integrationShortcut = Shortcut(modifier: .control, digit: 9)
@@ -105,6 +125,7 @@ private final class FakeHotkeyRegistrar: HotkeyRegistering {
 
     private(set) var isRunning = false
     private(set) var startCallCount = 0
+    private(set) var stopCallCount = 0
     private(set) var registrationHistory: [Set<Shortcut>] = []
 
     init(canStart: Bool = true, failures: Set<Shortcut> = []) {
@@ -128,6 +149,7 @@ private final class FakeHotkeyRegistrar: HotkeyRegistering {
     }
 
     func stop() {
+        stopCallCount += 1
         isRunning = false
         handler = nil
     }

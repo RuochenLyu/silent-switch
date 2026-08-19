@@ -20,130 +20,39 @@ final class AppMetadataReaderTests: XCTestCase {
 
 @MainActor
 final class AppActivationServiceTests: XCTestCase {
-    func testActivatesRunningApplicationFromFrontmostApplicationWithoutReopening() async {
-        let runningApplication = FakeRunningApplication()
-        let frontmostApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(
-            applications: [runningApplication],
-            frontmostApplication: frontmostApplication
-        )
+    func testAlwaysUsesWorkspaceToPreserveUserActivationIntent() {
         let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
         let workspace = FakeWorkspace(resolvedURL: applicationURL)
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
-        )
+        let service = AppActivationService(workspace: workspace)
 
         service.activateOrLaunch(sampleTarget)
-        try? await Task.sleep(for: .milliseconds(250))
-
-        XCTAssertEqual(runningApplication.activateCallCount, 1)
-        XCTAssertTrue(runningApplication.activationSource === frontmostApplication)
-        XCTAssertNil(workspace.openedURL)
-    }
-
-    func testLaunchesResolvedBundleIdentifierWhenApplicationIsNotRunning() async {
-        let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
-        let launchedApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(applicationResponses: [[], [launchedApplication]])
-        let workspace = FakeWorkspace(resolvedURL: applicationURL)
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
-        )
-
-        service.activateOrLaunch(sampleTarget)
-        await Task.yield()
 
         XCTAssertEqual(workspace.requestedBundleIdentifier, sampleTarget.bundleIdentifier)
         XCTAssertEqual(workspace.openedURL, applicationURL)
         XCTAssertEqual(workspace.openConfigurationActivates, true)
-        XCTAssertEqual(provider.requestedBundleIdentifiers, [sampleTarget.bundleIdentifier, sampleTarget.bundleIdentifier])
-        XCTAssertEqual(launchedApplication.activateCallCount, 1)
     }
 
-    func testFallsBackToStoredPathWhenBundleIdentifierCannotBeResolved() async {
-        let launchedApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(applicationResponses: [[], [launchedApplication]])
+    func testFallsBackToStoredPathWhenBundleIdentifierCannotBeResolved() {
         let workspace = FakeWorkspace(resolvedURL: nil)
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
-        )
+        let service = AppActivationService(workspace: workspace)
 
         service.activateOrLaunch(sampleTarget)
-        await Task.yield()
 
         XCTAssertEqual(workspace.openedURL, URL(fileURLWithPath: sampleTarget.path!))
-        XCTAssertEqual(launchedApplication.activateCallCount, 1)
     }
 
-    func testRetriesActivationUntilLaunchedApplicationIsRunning() async {
-        let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
-        let launchedApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(applicationResponses: [[], [], [], [launchedApplication]])
-        let workspace = FakeWorkspace(resolvedURL: applicationURL)
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
+    func testDoesNotOpenWhenTargetCannotBeResolved() {
+        let workspace = FakeWorkspace(resolvedURL: nil)
+        let service = AppActivationService(workspace: workspace)
+        let target = AppTarget(
+            bundleIdentifier: "com.example.Missing",
+            displayName: "Missing",
+            path: nil
         )
 
-        service.activateOrLaunch(sampleTarget)
-        try? await Task.sleep(nanoseconds: 600_000_000)
+        service.activateOrLaunch(target)
 
-        XCTAssertEqual(workspace.openedURL, applicationURL)
-        XCTAssertEqual(provider.requestedBundleIdentifiers.count, 4)
-        XCTAssertEqual(launchedApplication.activateCallCount, 1)
-    }
-
-    func testStaleLaunchRetryDoesNotStealFocusAfterNewShortcutRequest() async {
-        let firstTarget = AppTarget(
-            bundleIdentifier: "com.example.First",
-            displayName: "First",
-            path: "/Applications/First.app"
-        )
-        let secondTarget = AppTarget(
-            bundleIdentifier: "com.example.Second",
-            displayName: "Second",
-            path: "/Applications/Second.app"
-        )
-        let firstApplication = FakeRunningApplication()
-        let secondApplication = FakeRunningApplication()
-        let provider = FakeRunningApplicationProvider(applicationResponsesByBundleIdentifier: [
-            firstTarget.bundleIdentifier: [[], [], [firstApplication]],
-            secondTarget.bundleIdentifier: [[secondApplication]]
-        ])
-        let workspace = FakeWorkspace(resolvedURL: URL(fileURLWithPath: "/Applications/Resolved.app"))
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
-        )
-
-        service.activateOrLaunch(firstTarget)
-        await Task.yield()
-        service.activateOrLaunch(secondTarget)
-        try? await Task.sleep(nanoseconds: 600_000_000)
-
-        XCTAssertEqual(secondApplication.activateCallCount, 1)
-        XCTAssertEqual(firstApplication.activateCallCount, 0)
-    }
-
-    func testReopensRunningApplicationWhenActivationDoesNotMakeItActive() async {
-        let runningApplication = FakeRunningApplication()
-        runningApplication.isActive = false
-        let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
-        let provider = FakeRunningApplicationProvider(applications: [runningApplication])
-        let workspace = FakeWorkspace(resolvedURL: applicationURL)
-        let service = AppActivationService(
-            runningApplicationProvider: provider,
-            workspace: workspace
-        )
-
-        service.activateOrLaunch(sampleTarget)
-        try? await Task.sleep(for: .milliseconds(250))
-
-        XCTAssertEqual(workspace.openedURL, applicationURL)
-        XCTAssertEqual(workspace.openConfigurationActivates, true)
+        XCTAssertNil(workspace.openedURL)
     }
 
     private var sampleTarget: AppTarget {
@@ -152,73 +61,6 @@ final class AppActivationServiceTests: XCTestCase {
             displayName: "Target",
             path: "/Applications/Target.app"
         )
-    }
-}
-
-@MainActor
-private final class FakeRunningApplicationProvider: RunningApplicationProviding {
-    private var applicationResponses: [[RunningApplicationActivating]]
-    private var applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]
-    private let currentFrontmostApplication: RunningApplicationActivating?
-    private(set) var requestedBundleIdentifiers: [String] = []
-
-    init(
-        applications: [RunningApplicationActivating],
-        frontmostApplication: RunningApplicationActivating? = nil
-    ) {
-        self.applicationResponses = [applications]
-        self.applicationResponsesByBundleIdentifier = [:]
-        self.currentFrontmostApplication = frontmostApplication
-    }
-
-    init(applicationResponses: [[RunningApplicationActivating]]) {
-        self.applicationResponses = applicationResponses
-        self.applicationResponsesByBundleIdentifier = [:]
-        self.currentFrontmostApplication = nil
-    }
-
-    init(applicationResponsesByBundleIdentifier: [String: [[RunningApplicationActivating]]]) {
-        self.applicationResponses = []
-        self.applicationResponsesByBundleIdentifier = applicationResponsesByBundleIdentifier
-        self.currentFrontmostApplication = nil
-    }
-
-    func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [RunningApplicationActivating] {
-        requestedBundleIdentifiers.append(bundleIdentifier)
-
-        if var responses = applicationResponsesByBundleIdentifier[bundleIdentifier] {
-            if responses.count > 1 {
-                let response = responses.removeFirst()
-                applicationResponsesByBundleIdentifier[bundleIdentifier] = responses
-                return response
-            }
-
-            return responses.first ?? []
-        }
-
-        if applicationResponses.count > 1 {
-            return applicationResponses.removeFirst()
-        }
-
-        return applicationResponses.first ?? []
-    }
-
-    func frontmostApplication() -> RunningApplicationActivating? {
-        currentFrontmostApplication
-    }
-}
-
-@MainActor
-private final class FakeRunningApplication: RunningApplicationActivating {
-    private(set) var activateCallCount = 0
-    private(set) weak var activationSource: FakeRunningApplication?
-    var activationResult = true
-    var isActive = true
-
-    func activateAllWindows(from source: RunningApplicationActivating?) -> Bool {
-        activateCallCount += 1
-        activationSource = source as? FakeRunningApplication
-        return activationResult
     }
 }
 
