@@ -81,14 +81,16 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         let service = HotkeyRuntimeController(
             activate: { activatedTargets.append($0) },
             registrar: registrar,
-            stuckKeyTimeout: .milliseconds(20)
+            stuckKeyTimeout: .zero
         )
         service.updateSnapshot(HotkeySnapshot(routes: [shortcut: target]))
         service.start()
 
         registrar.send(shortcut, .pressed)
         registrar.send(shortcut, .pressed)
-        try? await Task.sleep(for: .milliseconds(40))
+        for _ in 0..<100 {
+            await Task.yield()
+        }
         registrar.send(shortcut, .pressed)
 
         XCTAssertEqual(activatedTargets, [target, target])
