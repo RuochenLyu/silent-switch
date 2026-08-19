@@ -40,6 +40,10 @@ submit_and_wait() {
     --timeout "$NOTARY_WAIT_TIMEOUT"
 }
 
+if [[ "${SILENT_SWITCH_SKIP_TESTS:-0}" != "1" ]]; then
+  "$PROJECT_ROOT/scripts/test.sh" >/dev/null
+fi
+
 "$PROJECT_ROOT/scripts/build-release.sh" >/dev/null
 
 APP_PATH="$BUILD_DIR/Release/Silent Switch.app"
@@ -63,18 +67,29 @@ if /usr/bin/codesign -d --entitlements :- "$APP_PATH" 2>/dev/null | /usr/bin/gre
 fi
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST")"
-ARCHS="$(/usr/bin/lipo -archs "$APP_PATH/Contents/MacOS/Silent Switch")"
-if [[ "$ARCHS" == *"arm64"* && "$ARCHS" == *"x86_64"* ]]; then
-  ARCH="universal"
-else
-  ARCH="${ARCHS// /-}"
+BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST")"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "error: release version must use semantic versioning: $VERSION" >&2
+  exit 1
 fi
+if [[ ! "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+  echo "error: build number must be a positive integer: $BUILD_NUMBER" >&2
+  exit 1
+fi
+
+ARCHS="$(/usr/bin/lipo -archs "$APP_PATH/Contents/MacOS/Silent Switch")"
+if [[ "$ARCHS" != *"arm64"* || "$ARCHS" != *"x86_64"* ]]; then
+  echo "error: notarized release must contain arm64 and x86_64: $ARCHS" >&2
+  exit 1
+fi
+ARCH="universal"
 PACKAGE_BASENAME="SilentSwitch-${VERSION}-macos-${ARCH}"
 DIST_DIR="$PROJECT_ROOT/dist"
 NOTARIZATION_DIR="$BUILD_DIR/Notarization"
 APP_NOTARY_ZIP="$NOTARIZATION_DIR/$PACKAGE_BASENAME-app.zip"
 DMG_PATH="$DIST_DIR/$PACKAGE_BASENAME.dmg"
 ZIP_PATH="$DIST_DIR/$PACKAGE_BASENAME.zip"
+CHECKSUM_PATH="$DIST_DIR/$PACKAGE_BASENAME.sha256"
 
 mkdir -p "$NOTARIZATION_DIR"
 rm -f "$APP_NOTARY_ZIP"
@@ -107,5 +122,11 @@ submit_and_wait "$DMG_PATH"
 /usr/sbin/spctl -a -vv --type open --context context:primary-signature "$DMG_PATH"
 /usr/sbin/spctl -a -vv --type execute "$APP_PATH"
 
+(
+  cd "$DIST_DIR"
+  /usr/bin/shasum -a 256 "$(basename "$DMG_PATH")" "$(basename "$ZIP_PATH")" >"$(basename "$CHECKSUM_PATH")"
+)
+
 echo "$DMG_PATH"
 echo "$ZIP_PATH"
+echo "$CHECKSUM_PATH"

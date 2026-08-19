@@ -49,11 +49,20 @@ Config is stored at:
 
 ### Hotkeys do not work
 
-Confirm that the shortcut is enabled with a target app selected, then click `Try Again` beside the shortcut status. If it still does not work, check whether another shortcut utility or a system feature uses the same combination.
+Confirm that the shortcut is enabled with a target app selected, then click `Try Again` beside the shortcut status. If the status still reports a failure, another app or system feature has usually registered that combination. Choose another shortcut or quit the app that owns it.
+
+View diagnostic logs in Terminal with:
+
+```sh
+log stream --level debug --style compact \
+  --predicate 'subsystem == "com.aix4u.silentswitch"'
+```
 
 ### Why Accessibility permission is not required
 
 Silent Switch uses macOS's system-level global shortcut support and registers only the combinations you configure. It does not need to read all keyboard input, so no Accessibility permission is required and app-signing changes cannot invalidate an old permission grant.
+
+Hotkeys follow the macOS Carbon event-dispatch lifecycle: combinations are registered before the event handler is installed. This order has been verified on the macOS 26 machine where shortcuts previously failed to fire.
 
 ## Development
 
@@ -65,6 +74,7 @@ make run           # build and open the Debug app
 make build-debug   # build the Debug app
 make build         # build the Release app
 make package       # build the Release app and produce DMG/ZIP
+make verify        # run tests and verify a universal Release build
 make package-notarized # build, notarize, and staple the release
 make clean         # remove build/
 ```
@@ -90,7 +100,7 @@ Build scripts prefer an existing Apple Development identity, or a local identity
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
-Official releases use `make package-notarized`, which requires a `Developer ID Application` certificate and a `silent-switch-notary` notary profile in Keychain.
+Run `make verify` before an official release. Releases use `make package-notarized`, which requires a `Developer ID Application` certificate and a `silent-switch-notary` notary profile in Keychain. The command reruns tests, checks the version and universal architectures, performs signing, notarization, and Gatekeeper validation, and writes a SHA-256 checksum file.
 
 ## Project Layout
 
@@ -110,6 +120,8 @@ User-facing strings live in `SilentSwitch/Resources/Localizable.xcstrings`. Runt
 ## Contributing
 
 Issues and pull requests are welcome. Before submitting code, run `make test` and confirm that a Release build succeeds.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development conventions, [CHANGELOG.md](CHANGELOG.md) for release history, and [SECURITY.md](SECURITY.md) for security reporting.
 
 ## Design Boundaries
 

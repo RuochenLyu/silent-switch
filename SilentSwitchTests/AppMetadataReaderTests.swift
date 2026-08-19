@@ -20,39 +20,101 @@ final class AppMetadataReaderTests: XCTestCase {
 
 @MainActor
 final class AppActivationServiceTests: XCTestCase {
-    func testAlwaysUsesWorkspaceToPreserveUserActivationIntent() {
+    func testAlwaysUsesWorkspaceToPreserveUserActivationIntent() async {
         let applicationURL = URL(fileURLWithPath: "/Applications/Resolved.app")
         let workspace = FakeWorkspace(resolvedURL: applicationURL)
-        let service = AppActivationService(workspace: workspace)
+        let service = AppActivationService(
+            workspace: workspace,
+            frontmostBundleIdentifier: { self.sampleTarget.bundleIdentifier },
+            verificationDelay: .zero
+        )
 
         service.activateOrLaunch(sampleTarget)
 
         XCTAssertEqual(workspace.requestedBundleIdentifier, sampleTarget.bundleIdentifier)
         XCTAssertEqual(workspace.openedURL, applicationURL)
         XCTAssertEqual(workspace.openConfigurationActivates, true)
+        for _ in 0..<3 { await Task.yield() }
     }
 
-    func testFallsBackToStoredPathWhenBundleIdentifierCannotBeResolved() {
+    func testFallsBackToStoredPathWhenBundleIdentifierCannotBeResolved() async {
         let workspace = FakeWorkspace(resolvedURL: nil)
-        let service = AppActivationService(workspace: workspace)
+        let service = AppActivationService(
+            workspace: workspace,
+            frontmostBundleIdentifier: { self.sampleTarget.bundleIdentifier },
+            verificationDelay: .zero
+        )
 
         service.activateOrLaunch(sampleTarget)
 
         XCTAssertEqual(workspace.openedURL, URL(fileURLWithPath: sampleTarget.path!))
+        for _ in 0..<3 { await Task.yield() }
     }
 
     func testDoesNotOpenWhenTargetCannotBeResolved() {
         let workspace = FakeWorkspace(resolvedURL: nil)
-        let service = AppActivationService(workspace: workspace)
         let target = AppTarget(
             bundleIdentifier: "com.example.Missing",
             displayName: "Missing",
             path: nil
         )
+        let service = AppActivationService(
+            workspace: workspace,
+            frontmostBundleIdentifier: { target.bundleIdentifier },
+            verificationDelay: .zero
+        )
 
         service.activateOrLaunch(target)
 
         XCTAssertNil(workspace.openedURL)
+    }
+
+    func testRetriesRunningApplicationWhenWorkspaceDidNotMakeItFrontmost() async {
+        let workspace = FakeWorkspace(resolvedURL: URL(fileURLWithPath: sampleTarget.path!))
+        var frontmostBundleIdentifier = "com.example.Foreground"
+        let runningApplication = FakeRunningApplication {
+            frontmostBundleIdentifier = self.sampleTarget.bundleIdentifier
+        }
+        let service = AppActivationService(
+            workspace: workspace,
+            frontmostBundleIdentifier: { frontmostBundleIdentifier },
+            runningApplications: { _ in [runningApplication] },
+            verificationDelay: .zero
+        )
+
+        service.activateOrLaunch(sampleTarget)
+        for _ in 0..<4 { await Task.yield() }
+
+        XCTAssertEqual(runningApplication.activateCallCount, 1)
+        XCTAssertEqual(frontmostBundleIdentifier, sampleTarget.bundleIdentifier)
+    }
+
+    func testNewActivationSupersedesPendingRetry() async {
+        let workspace = FakeWorkspace(resolvedURL: URL(fileURLWithPath: sampleTarget.path!))
+        let nextTarget = AppTarget(
+            bundleIdentifier: "com.example.Next",
+            displayName: "Next",
+            path: "/Applications/Next.app"
+        )
+        let firstApplication = FakeRunningApplication()
+        let nextApplication = FakeRunningApplication()
+        let service = AppActivationService(
+            workspace: workspace,
+            frontmostBundleIdentifier: { "com.example.Foreground" },
+            runningApplications: { bundleIdentifier in
+                bundleIdentifier == self.sampleTarget.bundleIdentifier
+                    ? [firstApplication]
+                    : [nextApplication]
+            },
+            verificationDelay: .zero
+        )
+
+        service.activateOrLaunch(sampleTarget)
+        service.activateOrLaunch(nextTarget)
+        for _ in 0..<6 { await Task.yield() }
+
+        XCTAssertEqual(firstApplication.activateCallCount, 0)
+        XCTAssertEqual(nextApplication.activateCallCount, 1)
     }
 
     private var sampleTarget: AppTarget {
@@ -61,6 +123,22 @@ final class AppActivationServiceTests: XCTestCase {
             displayName: "Target",
             path: "/Applications/Target.app"
         )
+    }
+}
+
+@MainActor
+private final class FakeRunningApplication: RunningApplicationActivating {
+    private let onActivate: () -> Void
+    private(set) var activateCallCount = 0
+
+    init(onActivate: @escaping () -> Void = {}) {
+        self.onActivate = onActivate
+    }
+
+    func activate(options: NSApplication.ActivationOptions) -> Bool {
+        activateCallCount += 1
+        onActivate()
+        return true
     }
 }
 

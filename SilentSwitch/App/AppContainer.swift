@@ -16,7 +16,6 @@ final class AppContainer {
     let loginItemService: LoginItemService
     let hotkeyStatus: HotkeyStatusModel
     let hotkeyRuntime: HotkeyRuntimeController
-    let appActivationService: AppActivationService
     let appMetadataReader: AppMetadataReader
 
     private var cancellables: Set<AnyCancellable> = []
@@ -26,14 +25,12 @@ final class AppContainer {
         loginItemService: LoginItemService,
         hotkeyStatus: HotkeyStatusModel,
         hotkeyRuntime: HotkeyRuntimeController,
-        appActivationService: AppActivationService,
         appMetadataReader: AppMetadataReader
     ) {
         self.settingsStore = settingsStore
         self.loginItemService = loginItemService
         self.hotkeyStatus = hotkeyStatus
         self.hotkeyRuntime = hotkeyRuntime
-        self.appActivationService = appActivationService
         self.appMetadataReader = appMetadataReader
 
         settingsStore.$config
@@ -60,7 +57,6 @@ final class AppContainer {
             loginItemService: LoginItemService(),
             hotkeyStatus: hotkeyStatus,
             hotkeyRuntime: hotkeyRuntime,
-            appActivationService: appActivationService,
             appMetadataReader: AppMetadataReader()
         )
 

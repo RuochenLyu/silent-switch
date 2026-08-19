@@ -49,11 +49,20 @@ Option / Command / Control + 顶部数字键 1...9
 
 ### 快捷键不生效
 
-先确认对应快捷键已启用并已选择应用，然后点击快捷键状态右侧的 `重试`。若仍不生效，请检查该组合键是否被其他快捷键工具或系统功能占用。
+先确认对应快捷键已启用并已选择应用，然后点击快捷键状态右侧的 `重试`。若状态仍显示失败，通常表示该组合键已经被其他应用或系统功能注册，请更换组合键或退出占用它的应用。
+
+诊断日志可以通过终端查看：
+
+```sh
+log stream --level debug --style compact \
+  --predicate 'subsystem == "com.aix4u.silentswitch"'
+```
 
 ### 为什么不需要辅助功能权限
 
 Silent Switch 使用 macOS 的系统级全局快捷键能力，只注册你配置的组合键，不需要读取全部键盘输入。因此安装后无需授予辅助功能权限，也不会受旧授权或应用签名变化影响。
+
+快捷键按 macOS 的 Carbon 事件分发顺序注册：先注册组合键，再安装事件处理器。这个顺序已在此前无法触发快捷键的 macOS 26 设备上实机验证。
 
 ## 开发
 
@@ -65,6 +74,7 @@ make run           # 构建并打开调试版本
 make build-debug   # 构建调试版本
 make build         # 构建发布版本
 make package       # 构建发布版本并生成安装包
+make verify        # 运行测试并验证通用 Release 构建
 make package-notarized # 构建、Apple 公证并贴票
 make clean         # 删除 build/
 ```
@@ -90,7 +100,7 @@ DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer make test
 SILENT_SWITCH_CREATE_SELF_SIGNED_IDENTITY=1 make setup-signing
 ```
 
-正式发布使用 `make package-notarized`，需要本机 Keychain 里存在 `Developer ID Application` 证书和 `silent-switch-notary` 公证凭据。
+正式发布前先运行 `make verify`。发布使用 `make package-notarized`，需要本机 Keychain 里存在 `Developer ID Application` 证书和 `silent-switch-notary` 公证凭据。该命令会再次运行测试，校验版本号与双架构，完成签名、公证和 Gatekeeper 验证，并生成 SHA-256 校验文件。
 
 ## 项目结构
 
@@ -110,6 +120,8 @@ scripts/                          构建、测试、运行脚本
 ## 参与贡献
 
 欢迎提交 Issue 或 Pull Request。提交代码前请先运行 `make test`，并确保 Release 构建可以通过。
+
+开发约定和提交检查见 [CONTRIBUTING.md](CONTRIBUTING.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告方式见 [SECURITY.md](SECURITY.md)。
 
 ## 设计边界
 

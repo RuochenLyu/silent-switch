@@ -9,7 +9,7 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         path: nil
     )
 
-    func testRefreshRecreatesHandlerAndReplacesRegistrations() {
+    func testRefreshKeepsHandlerAndReconcilesRegistrations() {
         let registrar = FakeHotkeyRegistrar()
         let states = HotkeyStateRecorder()
         let service = makeService(registrar: registrar, states: states)
@@ -19,7 +19,7 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
         service.start()
 
         XCTAssertEqual(registrar.startCallCount, 2)
-        XCTAssertEqual(registrar.stopCallCount, 1)
+        XCTAssertEqual(registrar.stopCallCount, 0)
         XCTAssertEqual(registrar.registrationHistory, [[shortcut], [shortcut]])
         XCTAssertEqual(states.values.last, .running)
     }
@@ -100,8 +100,36 @@ final class HotkeyRuntimeControllerTests: XCTestCase {
 
         XCTAssertTrue(registrar.start { _, _ in })
         XCTAssertTrue(registrar.replaceRegistrations(with: [integrationShortcut]).isEmpty)
+        XCTAssertTrue(registrar.replaceRegistrations(with: [integrationShortcut]).isEmpty)
 
         registrar.stop()
+        XCTAssertFalse(registrar.isRunning)
+    }
+
+    func testSecondCarbonRegistrarInSameProcessDetectsDuplicateShortcut() {
+        let first = SystemHotkeyRegistrar()
+        let second = SystemHotkeyRegistrar()
+        let integrationShortcut = Shortcut(modifier: .control, digit: 8)
+
+        XCTAssertTrue(first.start { _, _ in })
+        XCTAssertTrue(second.start { _, _ in })
+        XCTAssertTrue(first.replaceRegistrations(with: [integrationShortcut]).isEmpty)
+        XCTAssertEqual(second.replaceRegistrations(with: [integrationShortcut]), [integrationShortcut])
+
+        first.stop()
+        second.stop()
+    }
+
+    func testCarbonRegistrarSurvivesRepeatedStartStopCycles() {
+        let registrar = SystemHotkeyRegistrar()
+        let integrationShortcut = Shortcut(modifier: .control, digit: 7)
+
+        for _ in 0..<20 {
+            XCTAssertTrue(registrar.start { _, _ in })
+            XCTAssertTrue(registrar.replaceRegistrations(with: [integrationShortcut]).isEmpty)
+            registrar.stop()
+        }
+
         XCTAssertFalse(registrar.isRunning)
     }
 
@@ -157,6 +185,7 @@ private final class FakeHotkeyRegistrar: HotkeyRegistering {
     func send(_ shortcut: Shortcut, _ event: HotkeyEvent) {
         handler?(shortcut, event)
     }
+
 }
 
 @MainActor

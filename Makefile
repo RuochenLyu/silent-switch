@@ -1,12 +1,13 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-signing test build build-debug build-release package package-notarized run run-debug run-release clean
+.PHONY: help setup-signing test verify build build-debug build-release package package-notarized run run-debug run-release clean
 
 help:
 	@printf "%s\n" \
 		"Targets:" \
 		"  make setup-signing Create/use opt-in local self-signed identity" \
 		"  make test          Run unit tests" \
+		"  make verify        Run release tests and artifact checks" \
 		"  make build         Build Release app into build/Release" \
 		"  make build-debug   Build Debug app into build/Debug" \
 		"  make build-release Build Release app into build/Release" \
@@ -22,6 +23,9 @@ setup-signing:
 
 test:
 	@./scripts/test.sh
+
+verify:
+	@./scripts/verify-release.sh
 
 build: build-release
 

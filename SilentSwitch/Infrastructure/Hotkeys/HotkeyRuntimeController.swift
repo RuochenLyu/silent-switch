@@ -41,10 +41,6 @@ final class HotkeyRuntimeController {
     func start() {
         publish(.starting)
 
-        if registrar.isRunning {
-            registrar.stop()
-        }
-
         guard registrar.start(handler: { [weak self] shortcut, event in
             self?.handle(shortcut: shortcut, event: event)
         }) else {
